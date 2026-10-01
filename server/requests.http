@@ -1,0 +1,26 @@
+### Login as Admin
+POST http://localhost:5000/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@fid.com",
+  "password": "password123"
+}
+
+> {% client.global.set("auth_token", response.body.data.accessToken); %}
+
+### Get Patients
+GET http://localhost:5000/api/v1/patients
+Authorization: Bearer {{auth_token}}
+
+### Register Patient
+POST http://localhost:5000/api/v1/patients
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "name": "Jane Doe",
+  "dob": "1992-05-10",
+  "phone": "9988776655",
+  "bloodGroup": "O+"
+}
