@@ -5,8 +5,7 @@ import {
   FileText, CheckCircle2, Clock, AlertCircle, Loader
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-
-const API_BASE = 'http://localhost:5000/api/v1';
+import { API_BASE } from '../config';
 
 const LabDashboard = () => {
   const { user, authHeader } = useAuth();

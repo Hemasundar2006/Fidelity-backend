@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UploadCloud, CheckCircle, ChevronRight, ChevronLeft, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE } from '../config';
 
 const STEPS = ['Personal', 'Medical History', 'Partner', 'Documents', 'Consent'];
 
@@ -65,7 +66,7 @@ const RegisterMother = () => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const res = await fetch('http://localhost:5000/api/v1/patients', {
+      const res = await fetch(`${API_BASE}/patients`, {
         method: 'POST',
         headers: { ...authHeader(), 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

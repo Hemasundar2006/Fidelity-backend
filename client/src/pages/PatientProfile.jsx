@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, FileText, Baby, Activity, AlertCircle, Loader } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE } from '../config';
 
 const PatientProfile = () => {
   const { id } = useParams();
@@ -13,7 +14,7 @@ const PatientProfile = () => {
   useEffect(() => {
     const fetchPatient = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/v1/patients/${id}`, { headers: authHeader() });
+        const res = await fetch(`${API_BASE}/patients/${id}`, { headers: authHeader() });
         const data = await res.json();
         if (data.success) {
           setPatientData(data.data);
@@ -165,7 +166,7 @@ const PatientProfile = () => {
               const input = e.target.precaution.value;
               if (input) {
                 try {
-                  const res = await fetch(`http://localhost:5000/api/v1/patients/${id}/visits`, {
+                  const res = await fetch(`${API_BASE}/patients/${id}/visits`, {
                     method: 'POST',
                     headers: authHeader(),
                     body: JSON.stringify({
@@ -196,7 +197,7 @@ const PatientProfile = () => {
               const type = e.target.docType.value;
               if (title) {
                 try {
-                  const res = await fetch(`http://localhost:5000/api/v1/patients/${id}/reports`, {
+                  const res = await fetch(`${API_BASE}/patients/${id}/reports`, {
                     method: 'POST',
                     headers: authHeader(),
                     body: JSON.stringify({

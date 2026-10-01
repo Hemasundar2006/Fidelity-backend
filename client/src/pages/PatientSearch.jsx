@@ -2,8 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, User, Phone, Activity, ChevronRight, RefreshCw, Loader, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-
-const API_BASE = 'http://localhost:5000/api/v1';
+import { API_BASE } from '../config';
 
 const RISK_BADGE = {
   high: 'text-red-700 bg-red-50 border-red-200',

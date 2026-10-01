@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Database, ShieldAlert, CheckCircle, Plus, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-
+import { API_BASE } from '../config';
 
 const AdminPanel = () => {
   const { authHeader } = useAuth();
@@ -15,7 +15,7 @@ const AdminPanel = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/v1/auth/users', { headers: authHeader() });
+      const res = await fetch(`${API_BASE}/auth/users`, { headers: authHeader() });
       const data = await res.json();
       if (data.success) {
         setStaffList(data.data.map(u => ({ id: u._id, name: u.name, email: u.email, role: u.role, status: u.isActive ? 'Active' : 'Inactive' })));
@@ -29,7 +29,7 @@ const AdminPanel = () => {
     e.preventDefault();
     if (!form.name || !form.email || !form.password) return;
     try {
-      const res = await fetch('http://localhost:5000/api/v1/auth/register', {
+      const res = await fetch(`${API_BASE}/auth/register`, {
         method: 'POST',
         headers: { ...authHeader(), 'Content-Type': 'application/json' },
         body: JSON.stringify(form)

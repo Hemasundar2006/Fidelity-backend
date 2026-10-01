@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:5000/api/v1';
+import { API_BASE } from '../config';
 
 export const getAuthToken = () => {
   return localStorage.getItem('jl_token') || '';

@@ -6,8 +6,7 @@ import {
   Baby, HeartPulse, Calendar, ChevronRight, Loader
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-
-const API_BASE = 'http://localhost:5000/api/v1';
+import { API_BASE } from '../config';
 
 const StatCard = ({ icon: Icon, label, value, sub, color = 'purple' }) => {
   const c = {

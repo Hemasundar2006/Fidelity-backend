@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Home, FileText, Baby, Shield, User, Calendar, Syringe, ChevronRight, Lock, Phone, Download, Activity, LogOut, HeartPulse } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { API_BASE } from '../config';
 
 const GuardianPortal = () => {
   const [activeTab, setActiveTab] = useState('home');
@@ -20,7 +21,7 @@ const GuardianPortal = () => {
       setStep(2);
     } else if (step === 2) {
       try {
-        const res = await fetch('http://localhost:5000/api/v1/auth/patient/login', {
+        const res = await fetch(`${API_BASE}/auth/patient/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ phone, otp })
@@ -47,7 +48,7 @@ const GuardianPortal = () => {
           const headers = { 'Authorization': `Bearer ${patientData.accessToken}` };
           
           // Fetch visits for precautions
-          const visitsRes = await fetch(`http://localhost:5000/api/v1/patients/${patientData.patientId}/visits`, { headers });
+          const visitsRes = await fetch(`${API_BASE}/patients/${patientData.patientId}/visits`, { headers });
           const visitsData = await visitsRes.json();
           if (visitsData.success) {
             setSavedPrecautions(visitsData.data.filter(v => v.notes).map(v => ({
@@ -58,7 +59,7 @@ const GuardianPortal = () => {
           }
 
           // Fetch reports
-          const reportsRes = await fetch(`http://localhost:5000/api/v1/patients/${patientData.patientId}/reports`, { headers });
+          const reportsRes = await fetch(`${API_BASE}/patients/${patientData.patientId}/reports`, { headers });
           const reportsData = await reportsRes.json();
           if (reportsData.success) {
             setSavedDocs(reportsData.data.map(r => ({

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Plus, AlertTriangle, ShieldCheck, X, Loader } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE } from '../config';
 
 const PregnancyTracker = () => {
   const { id } = useParams();
@@ -14,13 +15,13 @@ const PregnancyTracker = () => {
 
   const fetchPatientData = async () => {
     try {
-      const patientRes = await fetch(`http://localhost:5000/api/v1/patients/${id}`, { headers: authHeader() });
+      const patientRes = await fetch(`${API_BASE}/patients/${id}`, { headers: authHeader() });
       const patientData = await patientRes.json();
       if (patientData.success) {
         setPatientData(patientData.data);
       }
 
-      const visitsRes = await fetch(`http://localhost:5000/api/v1/patients/${id}/visits`, { headers: authHeader() });
+      const visitsRes = await fetch(`${API_BASE}/patients/${id}/visits`, { headers: authHeader() });
       const visitsData = await visitsRes.json();
       if (visitsData.success) {
         setVisits(visitsData.data);
