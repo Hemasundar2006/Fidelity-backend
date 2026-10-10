@@ -1,4 +1,4 @@
-import { v2 as cloudinary } from 'cloudinary';
+import cloudinary from '../config/cloudinary.js';
 import asyncHandler from '../utils/asyncHandler.js';
 
 export const getUploadSignature = asyncHandler(async (req, res) => {

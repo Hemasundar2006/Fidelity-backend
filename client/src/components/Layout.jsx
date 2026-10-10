@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, UserPlus, Settings, LogOut,
-  Baby, Bell, Search, Menu, Globe, FlaskConical,
+  Baby, Bell, Search, Menu, Globe, FlaskConical, Activity,
   Stethoscope, HeartPulse, Pill, ClipboardList, ShieldCheck,
   X, ChevronDown, Layers, PanelLeftClose, PanelLeftOpen
 } from 'lucide-react';
@@ -17,6 +17,7 @@ const ROLE_NAV = {
     { path: '/dashboard/admin', label: 'Admin Overview', icon: LayoutDashboard },
     { path: '/admin', label: 'System Admin', icon: Settings },
     { path: '/patients/search', label: 'Patient Directory', icon: Users },
+    { path: '/fetus-monitor', label: 'AI Diagnostics', icon: Activity },
   ],
   receptionist: [
     { path: '/dashboard/receptionist', label: 'OPD Dashboard', icon: LayoutDashboard },

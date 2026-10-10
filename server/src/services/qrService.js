@@ -1,10 +1,20 @@
 import QRCode from 'qrcode';
-import { v2 as cloudinary } from 'cloudinary';
+import cloudinary from '../config/cloudinary.js';
 import jwt from 'jsonwebtoken';
 
 export const generateQR = async (id, folderPath) => {
   try {
     const qrImage = await QRCode.toDataURL(id);
+    
+    // Mock Cloudinary if not configured
+    if (!process.env.CLOUDINARY_URL && !process.env.CLOUDINARY_API_KEY) {
+      console.warn('Cloudinary not configured. Returning mock QR image.');
+      return {
+        publicId: `mock/${folderPath}/${id}`,
+        url: qrImage
+      };
+    }
+
     const result = await cloudinary.uploader.upload(qrImage, {
       folder: folderPath,
       resource_type: 'image',

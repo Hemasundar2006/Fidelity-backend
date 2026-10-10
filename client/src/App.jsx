@@ -29,6 +29,7 @@ import DeliveryForm from './pages/DeliveryForm';
 import BabyProfile from './pages/BabyProfile';
 import GuardianPortal from './pages/GuardianPortal';
 import ConsentLog from './pages/ConsentLog';
+import FetusMonitor from './pages/FetusMonitor';
 import AdminPanel from './pages/AdminPanel';
 import SuperAdminPanel from './pages/SuperAdminPanel';
 
@@ -173,6 +174,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={ALL_STAFF}>
                   <BabyProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/fetus-monitor"
+              element={
+                <ProtectedRoute allowedRoles={ALL_STAFF}>
+                  <FetusMonitor />
                 </ProtectedRoute>
               }
             />

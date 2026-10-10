@@ -69,7 +69,7 @@ export const validateRequest = (schema) => (req, res, next) => {
   } catch (error) {
     if (error instanceof z.ZodError) {
       const issues = error.issues || error.errors || [];
-      const details = issues.map(e => ({ field: (e.path || []).join('.'), issue: e.message }));
+      const details = (issues || []).map(e => ({ field: (e.path || []).join('.'), issue: e.message }));
       return res.status(422).json({
         success: false,
         error: { code: 'VALIDATION_ERROR', message: 'Validation failed', details }

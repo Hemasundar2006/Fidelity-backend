@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UploadCloud, CheckCircle, ChevronRight, ChevronLeft, Shield } from 'lucide-react';
+import { UploadCloud, CheckCircle, ChevronRight, ChevronLeft, Shield, RotateCcw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE } from '../config';
 
@@ -30,10 +30,32 @@ const RegisterMother = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successData, setSuccessData] = useState(null);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    localStorage.setItem('registerMotherDraft', JSON.stringify(formData));
-  }, [formData]);
+    if (!successData) {
+      const hasData = Boolean(
+        formData.name ||
+        formData.phone ||
+        formData.dob ||
+        formData.address?.line1 ||
+        formData.partner?.name
+      );
+      if (hasData) {
+        localStorage.setItem('registerMotherDraft', JSON.stringify(formData));
+      } else {
+        localStorage.removeItem('registerMotherDraft');
+      }
+    }
+  }, [formData, successData]);
+
+  const handleClearForm = () => {
+    localStorage.removeItem('registerMotherDraft');
+    setFormData(initialFormData);
+    setCurrentStep(0);
+    setSuccessData(null);
+    setErrors({});
+  };
 
   const updateForm = (field, value, nestedObj = null) => {
     if (nestedObj) {
@@ -44,10 +66,53 @@ const RegisterMother = () => {
     } else {
       setFormData(prev => ({ ...prev, [field]: value }));
     }
+    
+    const errorKey = nestedObj ? `${nestedObj}.${field}` : field;
+    setErrors(prev => {
+      if (!prev[errorKey]) return prev;
+      const newErrs = { ...prev };
+      delete newErrs[errorKey];
+      return newErrs;
+    });
   };
 
-  const handleNext = () => setCurrentStep(prev => Math.min(prev + 1, STEPS.length - 1));
-  const handlePrev = () => setCurrentStep(prev => Math.max(prev - 1, 0));
+  const validateStep = (step) => {
+    const newErrors = {};
+    if (step === 0) {
+      if (!formData.name?.trim()) newErrors.name = 'Full Name is required';
+      if (!formData.dob) newErrors.dob = 'Date of Birth is required';
+      if (!formData.phone?.trim()) {
+        newErrors.phone = 'Phone Number is required';
+      } else if (!/^\d{10,15}$/.test(formData.phone)) {
+        newErrors.phone = 'Phone Number must be between 10 and 15 digits';
+      }
+    } else if (step === 2) {
+      if (formData.partner?.phone && !/^\d{10,15}$/.test(formData.partner.phone)) {
+        newErrors['partner.phone'] = 'Phone Number must be between 10 and 15 digits';
+      }
+    } else if (step === 4) {
+      if (!formData.consents?.treatment) {
+        newErrors['consents.treatment'] = 'Treatment consent is mandatory';
+      }
+      if (!formData.consents?.data_sharing) {
+        newErrors['consents.data_sharing'] = 'Data sharing consent is mandatory';
+      }
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleNext = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(prev => Math.min(prev + 1, STEPS.length - 1));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+  
+  const handlePrev = () => {
+    setCurrentStep(prev => Math.max(prev - 1, 0));
+    setErrors({});
+  };
 
   const handleFileUpload = async (type, e) => {
     const file = e.target.files[0];
@@ -64,6 +129,7 @@ const RegisterMother = () => {
   const { authHeader } = useAuth();
 
   const handleSubmit = async () => {
+    if (!validateStep(4)) return;
     setIsSubmitting(true);
     try {
       const payload = {
@@ -87,11 +153,12 @@ const RegisterMother = () => {
       const data = await res.json();
       
       if (data.success) {
+        localStorage.removeItem('registerMotherDraft');
+        setFormData(initialFormData);
         setSuccessData({
           motherId: data.data.motherId,
           qrUrl: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${data.data.motherId}`
         });
-        localStorage.removeItem('registerMotherDraft');
       } else {
         const errorMsg = data.error?.message || data.message || 'Registration failed';
         const details = Array.isArray(data.error?.details) ? data.error.details.map(d => `${d.field}: ${d.issue}`).join('\n') : '';
@@ -125,19 +192,52 @@ const RegisterMother = () => {
           <p className="text-[12px] text-ink-600 mt-2 leading-[16px]">Scan to view health card and clinical record</p>
         </div>
         
-        <button className="btn btn-primary w-full h-[48px]" onClick={() => window.location.reload()}>
+        <button className="btn btn-primary w-full h-[48px]" onClick={handleClearForm}>
           Register Another Patient
         </button>
       </div>
     );
   }
 
+  const hasDraftData = Boolean(
+    formData.name ||
+    formData.phone ||
+    formData.dob ||
+    formData.address?.line1 ||
+    formData.partner?.name
+  );
+
   return (
     <div className="max-w-4xl mx-auto flex flex-col h-full min-h-0">
-      <div className="mb-6 max-sm:mb-4 flex flex-col gap-1">
-        <h1 className="text-[28px] max-sm:text-[22px] leading-[36px] max-sm:leading-[30px] font-heading font-semibold text-blue-800 m-0">Register Mother</h1>
-        <p className="text-[18px] max-sm:text-[16px] leading-[26px] text-ink-600 m-0">Enroll a new patient into Fidelity Healthcare network</p>
+      <div className="mb-6 max-sm:mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-[28px] max-sm:text-[22px] leading-[36px] max-sm:leading-[30px] font-heading font-semibold text-blue-800 m-0">Register Mother</h1>
+          <p className="text-[18px] max-sm:text-[16px] leading-[26px] text-ink-600 m-0">Enroll a new patient into Fidelity Healthcare network</p>
+        </div>
+        {hasDraftData && (
+          <button
+            type="button"
+            onClick={handleClearForm}
+            className="self-start sm:self-auto btn btn-outline h-[38px] text-[13px] font-medium text-ink-600 hover:text-red-600 hover:border-red-300 hover:bg-red-50/50 flex items-center gap-1.5 transition-colors border-ink-200"
+            title="Clear all fields and start fresh"
+          >
+            <RotateCcw size={15} /> Clear Form
+          </button>
+        )}
       </div>
+
+      {hasDraftData && currentStep === 0 && (
+        <div className="mb-4 p-3 bg-blue-50/70 border border-blue-200 rounded-ctl flex items-center justify-between gap-2 text-[13px] text-blue-900">
+          <span>Previously entered details have been restored from your draft.</span>
+          <button
+            type="button"
+            onClick={handleClearForm}
+            className="text-[12px] font-semibold text-red-600 hover:text-red-700 hover:underline shrink-0"
+          >
+            Clear / Start Fresh
+          </button>
+        </div>
+      )}
 
       {/* Stepper Navigation */}
       <div className="relative mb-8 max-sm:mb-6">
@@ -185,16 +285,19 @@ const RegisterMother = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
               <h2 className="md:col-span-2 text-[16px] leading-[24px] font-semibold text-blue-800 m-0">Personal Details</h2>
               <div className="flex flex-col gap-[6px]">
-                <label className="text-[12px] leading-[16px] uppercase tracking-[0.06em] font-semibold text-ink-600">Full Name</label>
-                <input type="text" className="input max-sm:h-[48px] max-sm:text-[16px]" value={formData.name} onChange={e => updateForm('name', e.target.value)} placeholder="e.g. Lakshmi Devi" />
+                <label className="text-[12px] leading-[16px] uppercase tracking-[0.06em] font-semibold text-ink-600">Full Name <span className="text-red-500">*</span></label>
+                <input type="text" className={`input max-sm:h-[48px] max-sm:text-[16px] ${errors.name ? 'border-red-500' : ''}`} value={formData.name} onChange={e => updateForm('name', e.target.value)} placeholder="e.g. Lakshmi Devi" />
+                {errors.name && <span className="text-red-500 text-[12px]">{errors.name}</span>}
               </div>
               <div className="flex flex-col gap-[6px]">
-                <label className="text-[12px] leading-[16px] uppercase tracking-[0.06em] font-semibold text-ink-600">Date of Birth</label>
-                <input type="date" className="input max-sm:h-[48px] max-sm:text-[16px]" value={formData.dob} onChange={e => updateForm('dob', e.target.value)} />
+                <label className="text-[12px] leading-[16px] uppercase tracking-[0.06em] font-semibold text-ink-600">Date of Birth <span className="text-red-500">*</span></label>
+                <input type="date" className={`input max-sm:h-[48px] max-sm:text-[16px] ${errors.dob ? 'border-red-500' : ''}`} value={formData.dob} onChange={e => updateForm('dob', e.target.value)} />
+                {errors.dob && <span className="text-red-500 text-[12px]">{errors.dob}</span>}
               </div>
               <div className="flex flex-col gap-[6px]">
-                <label className="text-[12px] leading-[16px] uppercase tracking-[0.06em] font-semibold text-ink-600">Phone Number</label>
-                <input type="tel" inputMode="tel" className="input max-sm:h-[48px] max-sm:text-[16px]" value={formData.phone} onChange={e => updateForm('phone', e.target.value)} placeholder="10-digit number" />
+                <label className="text-[12px] leading-[16px] uppercase tracking-[0.06em] font-semibold text-ink-600">Phone Number <span className="text-red-500">*</span></label>
+                <input type="tel" inputMode="tel" className={`input max-sm:h-[48px] max-sm:text-[16px] ${errors.phone ? 'border-red-500' : ''}`} value={formData.phone} onChange={e => updateForm('phone', e.target.value)} placeholder="10-digit number" />
+                {errors.phone && <span className="text-red-500 text-[12px]">{errors.phone}</span>}
               </div>
               <div className="flex flex-col gap-[6px]">
                 <label className="text-[12px] leading-[16px] uppercase tracking-[0.06em] font-semibold text-ink-600">Blood Group</label>
@@ -250,7 +353,8 @@ const RegisterMother = () => {
               </div>
               <div className="flex flex-col gap-[6px]">
                 <label className="text-[12px] leading-[16px] uppercase tracking-[0.06em] font-semibold text-ink-600">Phone Number</label>
-                <input type="tel" inputMode="tel" className="input max-sm:h-[48px] max-sm:text-[16px]" value={formData.partner.phone} onChange={e => updateForm('phone', e.target.value, 'partner')} />
+                <input type="tel" inputMode="tel" className={`input max-sm:h-[48px] max-sm:text-[16px] ${errors['partner.phone'] ? 'border-red-500' : ''}`} value={formData.partner.phone} onChange={e => updateForm('phone', e.target.value, 'partner')} />
+                {errors['partner.phone'] && <span className="text-red-500 text-[12px]">{errors['partner.phone']}</span>}
               </div>
               <div className="flex flex-col gap-[6px]">
                 <label className="text-[12px] leading-[16px] uppercase tracking-[0.06em] font-semibold text-ink-600">Date of Birth</label>
@@ -258,9 +362,9 @@ const RegisterMother = () => {
               </div>
               <div className="flex flex-col gap-[6px]">
                 <label className="text-[12px] leading-[16px] uppercase tracking-[0.06em] font-semibold text-ink-600">Blood Group</label>
-                <select className="input max-sm:h-[48px] max-sm:text-[16px] bg-white" value={formData.partner.bloodGroup} onChange={e => updateForm('bloodGroup', e.target.value)}>
+                <select className="input max-sm:h-[48px] max-sm:text-[16px] bg-white" value={formData.partner.bloodGroup} onChange={e => updateForm('bloodGroup', e.target.value, 'partner')}>
                   <option value="">Select</option>
-                  <option>A+</option><option>B+</option><option>O+</option><option>AB+</option>
+                  <option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>O+</option><option>O-</option><option>AB+</option><option>AB-</option>
                 </select>
               </div>
             </div>
@@ -303,10 +407,11 @@ const RegisterMother = () => {
                 <p className="text-ink-600 text-[12px] leading-[16px] m-0">Please read these carefully and get the patient's verbal or physical agreement.</p>
               </div>
               
-              <div className="flex items-center justify-between p-4 max-sm:p-3 border border-ink-100 rounded-ctl bg-white hover:border-ink-200 transition-colors">
+              <div className={`flex items-center justify-between p-4 max-sm:p-3 border rounded-ctl bg-white transition-colors ${errors['consents.treatment'] ? 'border-red-500 bg-red-50' : 'border-ink-100 hover:border-ink-200'}`}>
                 <div className="pr-4 flex flex-col gap-1">
-                  <h4 className="text-[14px] leading-[22px] font-semibold text-blue-800 m-0">Treatment Consent</h4>
+                  <h4 className="text-[14px] leading-[22px] font-semibold text-blue-800 m-0">Treatment Consent <span className="text-red-500">*</span></h4>
                   <p className="text-[13px] leading-[20px] text-ink-600 m-0">I consent to medical treatment and procedures at Fidelity Healthcare.</p>
+                  {errors['consents.treatment'] && <span className="text-red-500 text-[12px] mt-1">{errors['consents.treatment']}</span>}
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer shrink-0">
                   <input type="checkbox" className="sr-only peer" checked={formData.consents.treatment} onChange={(e) => updateForm('treatment', e.target.checked, 'consents')} />
@@ -314,10 +419,11 @@ const RegisterMother = () => {
                 </label>
               </div>
 
-              <div className="flex items-center justify-between p-4 max-sm:p-3 border border-ink-100 rounded-ctl bg-white hover:border-ink-200 transition-colors">
+              <div className={`flex items-center justify-between p-4 max-sm:p-3 border rounded-ctl bg-white transition-colors ${errors['consents.data_sharing'] ? 'border-red-500 bg-red-50' : 'border-ink-100 hover:border-ink-200'}`}>
                 <div className="pr-4 flex flex-col gap-1">
-                  <h4 className="text-[14px] leading-[22px] font-semibold text-blue-800 m-0">Data Sharing Consent</h4>
+                  <h4 className="text-[14px] leading-[22px] font-semibold text-blue-800 m-0">Data Sharing Consent <span className="text-red-500">*</span></h4>
                   <p className="text-[13px] leading-[20px] text-ink-600 m-0">I consent to my data being shared with connected paediatricians and specialists within this network.</p>
+                  {errors['consents.data_sharing'] && <span className="text-red-500 text-[12px] mt-1">{errors['consents.data_sharing']}</span>}
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer shrink-0">
                   <input type="checkbox" className="sr-only peer" checked={formData.consents.data_sharing} onChange={(e) => updateForm('data_sharing', e.target.checked, 'consents')} />

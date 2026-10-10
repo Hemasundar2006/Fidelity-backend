@@ -14,7 +14,6 @@ import invoiceRoutes from './routes/invoiceRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import hospitalRoutes from './routes/hospitalRoutes.js';
-
 import errorHandler from './middleware/errorMiddleware.js';
 
 dotenv.config();
@@ -23,7 +22,8 @@ const app = express();
 
 app.use(helmet());
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '25mb' }));
+app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 app.use(morgan('dev'));
 
 const limiter = rateLimit({
@@ -42,7 +42,6 @@ app.use('/api/v1/invoices', invoiceRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/uploads', uploadRoutes);
 app.use('/api/v1/hospitals', hospitalRoutes);
-
 app.use(errorHandler);
 
 export default app;
