@@ -244,14 +244,23 @@ export const publicBookAppointment = asyncHandler(async (req, res) => {
   const randSuffix = Math.floor(1000 + Math.random() * 9000);
   const bookingReference = `APT-${dateStr}-${randSuffix}`;
 
+  // Normalize consultation type
+  let normalizedType = 'consultation';
+  const typeLower = String(type || '').toLowerCase();
+  if (typeLower.includes('antenatal')) normalizedType = 'antenatal';
+  else if (typeLower.includes('risk') || typeLower.includes('follow')) normalizedType = 'followup';
+  else if (typeLower.includes('paediatric') || typeLower.includes('postnatal') || typeLower.includes('baby')) normalizedType = 'paediatric';
+  else if (typeLower.includes('scan') || typeLower.includes('consult')) normalizedType = 'consultation';
+  else normalizedType = type || 'consultation';
+
   // 6. Create Appointment
   const appointment = await Appointment.create({
     patient: patient._id,
     doctor,
     slotStart: requestedStart,
     slotEnd: requestedEnd,
-    type,
-    reason,
+    type: normalizedType,
+    reason: reason || type,
     tokenNo,
     source: 'online',
     bookingReference,

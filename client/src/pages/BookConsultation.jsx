@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, MapPin, Star, Calendar, ArrowRight, HeartPulse, ChevronLeft, Stethoscope, Loader } from 'lucide-react';
 import { fetchDoctors } from '../services/api';
+import BookingModal from '../components/BookingModal';
 
 const BookConsultation = () => {
   const navigate = useNavigate();
@@ -9,12 +10,21 @@ const BookConsultation = () => {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
+  // Booking Modal State
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const [activeDoctor, setActiveDoctor] = useState(null);
+
   useEffect(() => {
     fetchDoctors().then(data => {
       setDoctors(data || []);
       setLoading(false);
     });
   }, []);
+
+  const handleOpenBooking = (doc) => {
+    setActiveDoctor(doc);
+    setBookingOpen(true);
+  };
 
   const filteredDoctors = doctors.filter(doc => 
     doc.name.toLowerCase().includes(search.toLowerCase()) || 
@@ -25,7 +35,7 @@ const BookConsultation = () => {
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
       
       {/* ─── HEADER ─── */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 h-[72px] flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-700">
@@ -48,8 +58,7 @@ const BookConsultation = () => {
             Book a Consultation
           </h1>
           <p className="text-lg text-slate-400 max-w-2xl mx-auto mb-10">
-            Find the best maternity specialists and book your appointment instantly. 
-            Experience premium care with JanmaLink partner hospitals.
+            Find the best maternity specialists and book your appointment instantly with a live hospital token.
           </p>
 
           {/* Search Bar */}
@@ -69,7 +78,7 @@ const BookConsultation = () => {
                   onClick={() => setSearch('')}
                   className="text-slate-400 hover:text-slate-600 shrink-0"
                 >
-                  <Search size={20} className="opacity-0" /> {/* Spacer */}
+                  <Search size={20} className="opacity-0" />
                 </button>
               )}
             </div>
@@ -129,7 +138,7 @@ const BookConsultation = () => {
                 <div className="space-y-3 mb-8 flex-1">
                   <div className="flex items-center gap-3 text-sm text-slate-600">
                     <MapPin size={16} className="text-slate-400 shrink-0" />
-                    <span className="line-clamp-1">Fidelity Women's Hospital, Main Wing</span>
+                    <span className="line-clamp-1">Maternity OPD Wing, Consultation Suite</span>
                   </div>
                   <div className="flex items-center gap-3 text-sm text-slate-600">
                     <Calendar size={16} className="text-slate-400 shrink-0" />
@@ -138,8 +147,8 @@ const BookConsultation = () => {
                 </div>
 
                 <button 
-                  onClick={() => alert(`Booking flow for ${doc.name} will open here.`)}
-                  className="w-full py-3.5 bg-slate-900 hover:bg-blue-600 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 group-hover:shadow-lg shadow-blue-500/25 mt-auto"
+                  onClick={() => handleOpenBooking(doc)}
+                  className="w-full py-3.5 bg-slate-900 hover:bg-blue-600 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 group-hover:shadow-lg shadow-blue-500/25 mt-auto cursor-pointer"
                 >
                   Book Appointment <ArrowRight size={16} />
                 </button>
@@ -148,6 +157,13 @@ const BookConsultation = () => {
           </div>
         )}
       </div>
+
+      {/* Interactive Booking Modal */}
+      <BookingModal 
+        isOpen={bookingOpen} 
+        onClose={() => setBookingOpen(false)} 
+        preselectedDoctor={activeDoctor} 
+      />
 
     </div>
   );

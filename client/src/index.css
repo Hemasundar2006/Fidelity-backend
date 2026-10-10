@@ -48,6 +48,50 @@ html {
   animation: lp-float 6s ease-in-out 2s infinite;
 }
 
+/* Floating animation slow & reverse */
+@keyframes lp-float-slow {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50%      { transform: translateY(-14px) rotate(1deg); }
+}
+@keyframes lp-float-reverse {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50%      { transform: translateY(12px) rotate(-1deg); }
+}
+@keyframes lp-pulse-glow {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50%      { transform: scale(1.08); opacity: 0.8; }
+}
+
+.animate-float-slow {
+  animation: lp-float-slow 7s ease-in-out infinite;
+}
+.animate-float-reverse {
+  animation: lp-float-reverse 8s ease-in-out infinite;
+}
+.animate-pulse-glow {
+  animation: lp-pulse-glow 5s ease-in-out infinite;
+}
+
+.bg-peach-blue-gradient {
+  background: linear-gradient(135deg, #FFF7F2 0%, #F0F7FF 50%, #FFF2EB 100%);
+}
+
+.glass-peach-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(254, 215, 170, 0.4);
+  box-shadow: 0 20px 40px -15px rgba(251, 146, 60, 0.07);
+}
+
+.glass-blue-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(186, 230, 253, 0.5);
+  box-shadow: 0 20px 40px -15px rgba(56, 189, 248, 0.08);
+}
+
 /* Subtle pulse glow */
 @keyframes lp-glow {
   0%, 100% { opacity: 0.45; transform: scale(1); }

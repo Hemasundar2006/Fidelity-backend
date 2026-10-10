@@ -5,7 +5,7 @@ const appointmentSchema = new mongoose.Schema({
   doctor: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   slotStart: { type: Date, required: true },
   slotEnd: { type: Date, required: true },
-  type: { type: String, enum: ['consultation', 'antenatal', 'followup', 'paediatric'], required: true },
+  type: { type: String, default: 'consultation', trim: true },
   status: { type: String, enum: ['booked', 'checked_in', 'completed', 'cancelled', 'no_show'], default: 'booked' },
   source: { type: String, enum: ['online', 'reception'], default: 'reception' },
   bookingReference: { type: String },
