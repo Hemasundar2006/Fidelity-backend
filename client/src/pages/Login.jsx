@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Building, Lock, Mail, ShieldCheck, Baby, AlertCircle, Loader } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { ROLE_HOME } from '../components/ProtectedRoute';
-
-
 
 const Login = () => {
   const navigate = useNavigate();
@@ -23,10 +21,7 @@ const Login = () => {
     try {
       const user = await login(email, password);
       
-      // If they were trying to access a specific patient or page, send them there.
-      // Otherwise, always send them to their designated role dashboard.
       let dest = ROLE_HOME[user.role] || '/dashboard/receptionist';
-      
       if (from && !from.startsWith('/dashboard') && from !== '/' && from !== '/login') {
         dest = from;
       }
@@ -37,7 +32,6 @@ const Login = () => {
     }
   };
 
-  
   return (
     <div className="min-h-screen bg-ink-100 flex items-center justify-center p-4 font-body">
       <div className="w-full max-w-4xl bg-white rounded-card shadow-lg border border-ink-200 overflow-hidden flex flex-col md:flex-row">
@@ -112,7 +106,7 @@ const Login = () => {
             </button>
           </form>
 
-          <div className="mt-6 pt-4 border-t border-ink-200 flex justify-between text-xs text-ink-400">
+          <div className="mt-6 pt-4 border-t border-ink-200 flex justify-between text-xs text-ink-400 items-center">
             <span>DPDP Act 2023 Compliant</span>
             <span>Version 4.2.1-prod</span>
           </div>

@@ -62,6 +62,16 @@ export const patientSchema = z.object({
   ]).optional()
 });
 
+export const babyRegistrationSchema = z.object({
+  motherId: z.string().min(1, "Mother ID is required"),
+  name: z.string().optional(),
+  sex: z.enum(['male', 'female', 'other']),
+  dob: z.string().or(z.date()),
+  birthWeightKg: z.number().min(0.1, "Weight must be at least 0.1 kg").max(10, "Weight cannot exceed 10 kg"),
+  birthLengthCm: z.number().min(10, "Length must be at least 10 cm").max(100, "Length cannot exceed 100 cm"),
+  bloodGroup: z.enum(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']),
+});
+
 export const validateRequest = (schema) => (req, res, next) => {
   try {
     req.body = schema.parse(req.body);

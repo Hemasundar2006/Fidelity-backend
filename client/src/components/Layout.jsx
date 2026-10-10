@@ -3,10 +3,18 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, UserPlus, Settings, LogOut,
   Baby, Bell, Search, Menu, Globe, FlaskConical, Activity,
-  Stethoscope, HeartPulse, Pill, ClipboardList, ShieldCheck,
-  X, ChevronDown, Layers, PanelLeftClose, PanelLeftOpen
+  Stethoscope, HeartPulse, Pill, ShieldCheck,
+  X, PanelLeftClose, PanelLeftOpen
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+
+// Brand Colors
+const BLUE = '#76C0EC';
+const BLUE_DARK = '#0284c7'; // Higher contrast for text/icons
+const BLUE_LIGHT = '#f0f8fd';
+const PINK = '#FF95A5';
+const PINK_DARK = '#e11d48'; // Higher contrast for text/icons
+const PINK_LIGHT = '#fff0f2';
 
 // Nav items by role
 const ROLE_NAV = {
@@ -17,20 +25,31 @@ const ROLE_NAV = {
     { path: '/dashboard/admin', label: 'Admin Overview', icon: LayoutDashboard },
     { path: '/admin', label: 'System Admin', icon: Settings },
     { path: '/patients/search', label: 'Patient Directory', icon: Users },
-    { path: '/fetus-monitor', label: 'AI Diagnostics', icon: Activity },
+    { path: '/patients/register', label: 'Register Mother', icon: UserPlus },
+    { path: '/babies/search', label: 'Baby Directory', icon: Baby },
+    { path: '/babies/register', label: 'Register Baby', icon: Baby },
+    { path: '/fetus-monitor', label: 'Fetal Monitor', icon: Activity },
+    { path: '/maternal-health-predictor', label: 'Risk Predictor', icon: HeartPulse },
   ],
   receptionist: [
     { path: '/dashboard/receptionist', label: 'OPD Dashboard', icon: LayoutDashboard },
     { path: '/patients/search', label: 'Patient Directory', icon: Users },
-    { path: '/patients/register', label: 'Register Patient', icon: UserPlus },
+    { path: '/babies/search', label: 'Baby Directory', icon: Baby },
+    { path: '/patients/register', label: 'Register Mother', icon: UserPlus },
+    { path: '/babies/register', label: 'Register Baby', icon: Baby },
   ],
   doctor: [
     { path: '/dashboard/doctor', label: 'Clinical Dashboard', icon: Stethoscope },
     { path: '/patients/search', label: 'My Patients', icon: Users },
+    { path: '/babies/search', label: 'Baby Directory', icon: Baby },
+    { path: '/maternal-health-predictor', label: 'Risk Predictor', icon: HeartPulse },
   ],
   nurse: [
     { path: '/dashboard/nurse', label: 'Ward Dashboard', icon: HeartPulse },
     { path: '/patients/search', label: 'Patient Directory', icon: Users },
+    { path: '/babies/search', label: 'Baby Directory', icon: Baby },
+    { path: '/babies/register', label: 'Register Baby', icon: Baby },
+    { path: '/maternal-health-predictor', label: 'Risk Predictor', icon: HeartPulse },
   ],
   lab: [
     { path: '/dashboard/lab', label: 'Lab Queue', icon: FlaskConical },
@@ -43,13 +62,13 @@ const ROLE_NAV = {
 };
 
 const ROLE_META = {
-  superadmin: { label: 'Platform Administrator', accent: 'bg-[#FF95A5]', iconBg: 'bg-[#fff0f2] text-[#FF95A5]' },
-  admin: { label: 'System Administrator', accent: 'bg-[#FF95A5]', iconBg: 'bg-[#fff0f2] text-[#FF95A5]' },
-  receptionist: { label: 'Receptionist', accent: 'bg-[#76C0EC]', iconBg: 'bg-[#f0f8fd] text-[#76C0EC]' },
-  doctor: { label: 'Physician', accent: 'bg-[#FF95A5]', iconBg: 'bg-[#fff0f2] text-[#FF95A5]' },
-  nurse: { label: 'Nursing Staff', accent: 'bg-[#FF95A5]', iconBg: 'bg-[#fff0f2] text-[#FF95A5]' },
-  lab: { label: 'Lab Technician', accent: 'bg-[#76C0EC]', iconBg: 'bg-[#f0f8fd] text-[#76C0EC]' },
-  pharmacy: { label: 'Pharmacist', accent: 'bg-[#76C0EC]', iconBg: 'bg-[#f0f8fd] text-[#76C0EC]' },
+  superadmin: { label: 'Platform Administrator', theme: 'pink' },
+  admin: { label: 'System Administrator', theme: 'blue' },
+  receptionist: { label: 'Receptionist', theme: 'blue' },
+  doctor: { label: 'Physician', theme: 'blue' },
+  nurse: { label: 'Nursing Staff', theme: 'pink' },
+  lab: { label: 'Lab Technician', theme: 'blue' },
+  pharmacy: { label: 'Pharmacist', theme: 'blue' },
 };
 
 const getInitials = (name = '') =>
@@ -62,7 +81,6 @@ const Layout = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
-  // Persistent sidebar state
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
     const saved = localStorage.getItem('jl_sidebar_open');
     return saved !== null ? saved === 'true' : true;
@@ -95,225 +113,218 @@ const Layout = () => {
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-white font-body text-gray-800">
+    <div className="flex h-screen w-full overflow-hidden bg-slate-50 font-body text-slate-800">
       {/* ── Sidebar (Desktop) ── */}
       <aside
-        className={`hidden md:flex flex-col shrink-0 h-full py-3 pl-4 pr-1 transition-[width] duration-300 ease-in-out z-30 ${
-          isSidebarOpen ? 'w-[260px]' : 'w-[82px]'
+        className={`hidden md:flex flex-col shrink-0 h-full bg-white border-r border-slate-200 transition-[width] duration-300 ease-in-out z-30 ${
+          isSidebarOpen ? 'w-[260px]' : 'w-[80px]'
         }`}
       >
-        <div className="flex flex-col h-full bg-white rounded-3xl shadow-sm border border-[#76C0EC]/20 overflow-hidden">
-          {/* Sidebar Top: Logo + Open/Close Button */}
+        <div className="flex items-center justify-between h-[64px] px-4 border-b border-slate-200 shrink-0">
           {isSidebarOpen ? (
-            <div className="flex items-center justify-between px-4 py-3.5 border-b border-[#76C0EC]/15 shrink-0">
-              <div className="flex items-center gap-3 overflow-hidden">
-                <div className="w-10 h-10 rounded-2xl bg-[#fff0f2] border border-[#FF95A5]/25 flex items-center justify-center shrink-0 shadow-sm">
-                  <Baby size={22} className="text-[#FF95A5]" />
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="font-heading font-bold text-[18px] text-[#FF95A5] leading-tight tracking-tight truncate">
-                    JanmaLink
-                  </span>
-                  <span className="text-[9px] uppercase font-bold text-[#76C0EC] tracking-widest mt-0.5 truncate">
-                    Fidelity Healthcare
-                  </span>
-                </div>
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm" style={{ backgroundColor: BLUE_LIGHT }}>
+                <Baby size={20} style={{ color: BLUE_DARK }} />
               </div>
-              <button
-                onClick={toggleSidebar}
-                title="Collapse sidebar"
-                className="w-8 h-8 rounded-xl flex items-center justify-center text-[#76C0EC] hover:text-[#FF95A5] hover:bg-[#fff0f2] transition-colors shrink-0 cursor-pointer border border-[#76C0EC]/20 hover:border-[#FF95A5]/30"
-              >
-                <PanelLeftClose size={18} />
-              </button>
+              <div className="flex flex-col min-w-0">
+                <span className="font-heading font-extrabold text-[18px] leading-tight tracking-tight truncate" style={{ color: BLUE_DARK }}>
+                  JanmaLink
+                </span>
+              </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-2 py-3.5 border-b border-[#76C0EC]/15 shrink-0">
-              <button
-                onClick={toggleSidebar}
-                title="JanmaLink - Click to expand"
-                className="w-10 h-10 rounded-2xl bg-[#fff0f2] border border-[#FF95A5]/25 flex items-center justify-center shrink-0 shadow-sm hover:scale-105 transition-all cursor-pointer"
-              >
-                <Baby size={22} className="text-[#FF95A5]" />
-              </button>
-              <button
-                onClick={toggleSidebar}
-                title="Open sidebar"
-                className="w-8 h-8 rounded-xl flex items-center justify-center text-[#76C0EC] hover:text-[#FF95A5] hover:bg-[#fff0f2] transition-colors shrink-0 cursor-pointer border border-[#76C0EC]/20 hover:border-[#FF95A5]/30"
-              >
-                <PanelLeftOpen size={18} />
-              </button>
-            </div>
+            <button
+              onClick={toggleSidebar}
+              className="w-10 h-10 mx-auto rounded-lg flex items-center justify-center shrink-0 shadow-sm hover:scale-105 transition-all cursor-pointer"
+              style={{ backgroundColor: BLUE_LIGHT }}
+            >
+              <Baby size={22} style={{ color: BLUE_DARK }} />
+            </button>
           )}
 
-          {/* Role Badge */}
-          {isSidebarOpen ? (
-            <div className={`mx-3 mt-3 mb-2 px-3 py-1.5 rounded-xl text-[11px] font-bold uppercase tracking-wider text-center flex items-center justify-center shrink-0 ${meta.iconBg}`}>
+          {isSidebarOpen && (
+            <button
+              onClick={toggleSidebar}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
+            >
+              <PanelLeftClose size={18} />
+            </button>
+          )}
+        </div>
+
+        {/* Role Badge */}
+        {isSidebarOpen ? (
+          <div className="px-5 py-4 shrink-0 transition-opacity duration-300">
+            <div className="px-3 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-wider text-center flex items-center justify-center border" style={{ backgroundColor: meta.theme === 'pink' ? PINK_LIGHT : BLUE_LIGHT, color: meta.theme === 'pink' ? PINK_DARK : BLUE_DARK, borderColor: meta.theme === 'pink' ? '#FF95A540' : '#76C0EC40' }}>
               {meta.label}
             </div>
-          ) : (
-            <div
-              className={`mx-auto mt-3 mb-2 w-9 h-9 rounded-xl text-[13px] font-bold flex items-center justify-center shadow-sm shrink-0 ${meta.iconBg}`}
-              title={meta.label}
-            >
-              {role.charAt(0).toUpperCase()}
+          </div>
+        ) : (
+          <div className="mt-4 flex justify-center shrink-0 transition-opacity duration-300">
+             <div className="w-10 h-10 rounded-lg text-[13px] font-bold flex items-center justify-center border" style={{ backgroundColor: meta.theme === 'pink' ? PINK_LIGHT : BLUE_LIGHT, color: meta.theme === 'pink' ? PINK_DARK : BLUE_DARK, borderColor: meta.theme === 'pink' ? '#FF95A540' : '#76C0EC40' }}>
+                {role.charAt(0).toUpperCase()}
+             </div>
+          </div>
+        )}
+
+        {/* Navigation Links */}
+        <nav className="flex-1 overflow-y-auto py-2">
+          {isSidebarOpen && (
+            <div className="px-6 pb-3 text-[10px] font-bold uppercase tracking-widest text-slate-500 whitespace-nowrap overflow-hidden transition-opacity duration-300">
+              Menu
             </div>
           )}
+          <div className="flex flex-col">
+            {navItems.map((item) => {
+              const isActive =
+                location.pathname === item.path ||
+                (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
 
-          {/* Navigation Links */}
-          <nav className="mt-2 flex-1 overflow-y-auto px-3">
-            {isSidebarOpen && (
-              <div className="px-3 pb-2 text-[10px] font-bold uppercase tracking-widest text-[#76C0EC]/80">
-                Navigation
-              </div>
-            )}
-            <div className="flex flex-col gap-1.5">
-              {navItems.map((item) => {
-                const isActive =
-                  location.pathname === item.path ||
-                  (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
-
-                if (isSidebarOpen) {
-                  return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      className={`flex items-center gap-3 px-3.5 h-[46px] rounded-2xl text-[13px] transition-all duration-200 ${
-                        isActive
-                          ? 'bg-[#FF95A5] text-white font-bold shadow-md shadow-[#FF95A5]/30'
-                          : 'text-[#76C0EC] hover:bg-[#f0f8fd] hover:text-[#FF95A5] font-semibold'
-                      }`}
-                    >
-                      <item.icon
-                        size={20}
-                        className={isActive ? 'text-white shrink-0' : 'text-[#76C0EC] shrink-0'}
-                      />
-                      <span className="truncate">{item.label}</span>
-                    </Link>
-                  );
-                }
-
+              if (isSidebarOpen) {
                 return (
                   <Link
                     key={item.path}
                     to={item.path}
-                    title={item.label}
-                    className={`flex items-center justify-center w-[46px] h-[46px] mx-auto rounded-2xl text-[13px] transition-all duration-200 ${
+                    className={`flex items-center gap-3 px-6 h-[44px] text-[14px] transition-all duration-200 border-l-4 overflow-hidden whitespace-nowrap ${
                       isActive
-                        ? 'bg-[#FF95A5] text-white font-bold shadow-md shadow-[#FF95A5]/30'
-                        : 'text-[#76C0EC] hover:bg-[#f0f8fd] hover:text-[#FF95A5]'
+                        ? 'font-bold bg-slate-50'
+                        : 'text-slate-700 hover:bg-slate-50 border-transparent font-medium'
                     }`}
+                    style={{ borderLeftColor: isActive ? BLUE_DARK : 'transparent', color: isActive ? BLUE_DARK : undefined }}
                   >
-                    <item.icon size={20} className={isActive ? 'text-white' : 'text-[#76C0EC]'} />
+                    <item.icon
+                      size={20}
+                      className="shrink-0 transition-colors"
+                      style={{ color: isActive ? BLUE_DARK : '#64748b' }}
+                    />
+                    <span className="truncate opacity-100 transition-opacity duration-300 delay-100">{item.label}</span>
                   </Link>
                 );
-              })}
-            </div>
-          </nav>
+              }
 
-          {/* Bottom Action: Logout */}
-          <div className="p-3 mt-auto border-t border-[#76C0EC]/15 shrink-0">
-            {isSidebarOpen ? (
-              <>
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center justify-center gap-2 px-3 h-[42px] rounded-xl text-[13px] font-bold text-[#FF95A5] bg-[#fff0f2] hover:bg-[#FF95A5] hover:text-white transition-all mb-2 cursor-pointer shadow-sm border border-[#FF95A5]/25 hover:border-transparent"
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  title={item.label}
+                  className={`flex items-center justify-center w-[44px] h-[44px] mx-auto rounded-xl transition-all duration-200 mb-1 ${
+                    isActive
+                      ? 'shadow-sm'
+                      : 'hover:bg-slate-100'
+                  }`}
+                  style={{ backgroundColor: isActive ? BLUE_LIGHT : 'transparent' }}
                 >
-                  <LogOut size={17} strokeWidth={2.5} className="shrink-0" />
-                  <span className="whitespace-nowrap">Secure Logout</span>
-                </button>
-                <div className="text-center text-[10px] font-semibold text-[#76C0EC]/70">
-                  © 2026 Fidelity
-                </div>
-              </>
-            ) : (
-              <button
-                onClick={handleLogout}
-                title="Secure Logout"
-                className="w-[44px] h-[44px] mx-auto flex items-center justify-center rounded-xl text-[#FF95A5] bg-[#fff0f2] hover:bg-[#FF95A5] hover:text-white transition-all cursor-pointer shadow-sm border border-[#FF95A5]/25 hover:border-transparent"
-              >
-                <LogOut size={18} strokeWidth={2.5} />
-              </button>
-            )}
+                  <item.icon size={20} style={{ color: isActive ? BLUE_DARK : '#64748b' }} className="transition-colors" />
+                </Link>
+              );
+            })}
           </div>
+        </nav>
+
+        {/* Bottom Action: Logout */}
+        <div className="p-4 border-t border-slate-200 shrink-0">
+          {isSidebarOpen ? (
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center gap-2 px-3 h-[40px] rounded-lg text-[13px] font-bold text-slate-600 hover:text-red-600 hover:bg-red-50 border border-slate-200 hover:border-red-200 transition-all cursor-pointer"
+            >
+              <LogOut size={16} className="shrink-0" />
+              <span className="whitespace-nowrap">Logout</span>
+            </button>
+          ) : (
+            <button
+              onClick={handleLogout}
+              title="Logout"
+              className="w-[40px] h-[40px] mx-auto flex items-center justify-center rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 border border-slate-200 hover:border-red-200 transition-all cursor-pointer"
+            >
+              <LogOut size={18} />
+            </button>
+          )}
         </div>
       </aside>
 
       {/* ── Main Layout (Header + Page Content) ── */}
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-        {/* Transparent Shorter Top Header */}
-        <header className="h-[56px] max-md:h-[52px] bg-transparent flex items-center justify-between px-6 max-sm:px-4 shrink-0 z-20">
-          {/* Left: Mobile hamburger & branding OR Desktop hospital badge */}
+        {/* Top Header */}
+        <header className="h-[64px] bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0 z-20">
+          
           <div className="flex items-center gap-3">
             <button
-              className="md:hidden icon-btn -ml-1 text-[#76C0EC] p-2 rounded-xl hover:bg-[#f0f8fd]"
+              className="md:hidden icon-btn -ml-2 text-slate-600 p-2 rounded-xl hover:bg-slate-100"
               onClick={() => setMobileMenuOpen(true)}
             >
               <Menu size={22} />
             </button>
             <div className="flex items-center gap-2 md:hidden">
-              <Baby size={20} className="text-[#FF95A5]" />
-              <span className="font-heading font-bold text-[16px] text-[#FF95A5]">JanmaLink</span>
+              <Baby size={20} style={{ color: BLUE_DARK }} />
+              <span className="font-heading font-bold text-[16px]" style={{ color: BLUE_DARK }}>JanmaLink</span>
             </div>
 
             {/* Desktop: Hospital indicator badge */}
             <div className="hidden md:flex items-center gap-2">
-              <div className="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white border border-[#76C0EC]/20 shadow-sm text-gray-700 flex items-center gap-2">
-                <ShieldCheck size={14} className="text-[#FF95A5]" />
-                <span className="font-bold text-[#76C0EC]">
-                  {user?.hospital?.name || user?.hospitalRef?.name || 'JanmaLink Health'}
-                </span>
+              {!isSidebarOpen && (
+                <button
+                  onClick={toggleSidebar}
+                  className="w-8 h-8 mr-2 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
+                >
+                  <PanelLeftOpen size={18} />
+                </button>
+              )}
+              <div className="px-3 py-1.5 rounded-md text-xs font-semibold bg-slate-50 border border-slate-200 text-slate-700 flex items-center gap-2 shadow-sm">
+                <ShieldCheck size={14} style={{ color: PINK_DARK }} />
+                <span>{user?.hospital?.name || user?.hospitalRef?.name || 'JanmaLink Health'}</span>
               </div>
             </div>
           </div>
 
-          {/* Center: Search (for authorized staff roles) */}
+          {/* Center: Search */}
           {['admin', 'receptionist', 'doctor', 'nurse'].includes(role) && (
-            <div className="flex-1 max-w-md mx-4 hidden md:block">
+            <div className="flex-1 max-w-lg mx-8 hidden md:block">
               <form onSubmit={handleGlobalSearch} className="relative w-full">
                 <Search
                   size={16}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#76C0EC] pointer-events-none"
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
                 />
                 <input
                   type="text"
                   placeholder="Search patient by name, ID, or phone..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-[38px] bg-white text-gray-800 placeholder:text-gray-400 text-[13px] rounded-full pl-10 pr-4 border border-[#76C0EC]/30 shadow-sm focus:outline-none hover:border-[#FF95A5] focus:border-[#FF95A5] focus:ring-2 focus:ring-[#FF95A5]/20 transition-all"
+                  className="w-full h-[40px] bg-slate-50 text-slate-800 placeholder:text-slate-400 text-[13px] rounded-lg pl-10 pr-4 border border-slate-200 focus:outline-none focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-500/10 transition-all"
                 />
               </form>
             </div>
           )}
 
           {/* Right: Actions and User Profile */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-4 shrink-0">
             <Link
               to="/"
-              className="h-[36px] px-3.5 rounded-full text-xs font-semibold flex items-center gap-1.5 shrink-0 hidden sm:inline-flex bg-white text-[#76C0EC] hover:text-[#FF95A5] hover:bg-[#f0f8fd] border border-[#76C0EC]/20 shadow-sm transition-colors"
+              className="hidden sm:flex h-[36px] px-3.5 rounded-lg text-xs font-medium items-center gap-2 bg-white text-slate-700 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 transition-colors shadow-sm"
             >
-              <Globe size={14} className="text-[#FF95A5]" />
+              <Globe size={14} style={{ color: PINK_DARK }} />
               <span>Patient Site</span>
             </Link>
             <button
               title="Notifications"
-              className="relative w-[36px] h-[36px] rounded-full bg-white border border-[#76C0EC]/20 text-[#76C0EC] hover:text-[#FF95A5] hover:bg-[#fff0f2] shadow-sm flex items-center justify-center cursor-pointer transition-colors shrink-0"
+              className="relative w-[36px] h-[36px] rounded-lg border border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-50 flex items-center justify-center cursor-pointer transition-colors shrink-0"
             >
               <Bell size={18} />
-              <span className="absolute top-2 right-2 w-[7px] h-[7px] rounded-full bg-[#FF95A5] border-2 border-white" />
+              <span className="absolute top-2 right-2 w-[8px] h-[8px] rounded-full border-2 border-white" style={{ backgroundColor: PINK }} />
             </button>
-            <div className="w-px h-6 bg-[#76C0EC]/20 hidden md:block" />
-            <div className="flex items-center gap-2.5 shrink-0 bg-white border border-[#76C0EC]/20 rounded-full px-2 py-1 shadow-sm">
-              <div className="text-right hidden sm:block pl-1">
-                <span className="block text-[13px] font-bold text-gray-800 leading-tight">
+            <div className="w-px h-6 bg-slate-200 hidden md:block" />
+            <div className="flex items-center gap-3 shrink-0 cursor-pointer hover:opacity-80 transition-opacity">
+              <div className="text-right hidden sm:block">
+                <span className="block text-[13px] font-bold text-slate-800 leading-tight">
                   {user?.name || 'Staff'}
                 </span>
-                <span className="block text-[10px] text-[#76C0EC] font-semibold capitalize leading-none mt-0.5">
+                <span className="block text-[11px] text-slate-500 font-medium capitalize mt-0.5">
                   {meta.label}
                 </span>
               </div>
               <div
-                className={`w-[34px] h-[34px] rounded-full text-white font-bold text-[12px] flex items-center justify-center shadow-sm shrink-0 ${meta.accent}`}
+                className="w-[36px] h-[36px] rounded-lg text-white font-bold text-[13px] flex items-center justify-center shadow-sm shrink-0"
+                style={{ backgroundColor: meta.theme === 'pink' ? PINK_DARK : BLUE_DARK }}
               >
                 {getInitials(user?.name)}
               </div>
@@ -322,7 +333,7 @@ const Layout = () => {
         </header>
 
         {/* Scrollable Content Area */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto px-6 max-sm:px-4 pb-6 min-w-0">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto p-6 min-w-0 bg-slate-50">
           <Outlet />
         </main>
       </div>
@@ -331,23 +342,23 @@ const Layout = () => {
       {mobileMenuOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
           <div
-            className="fixed inset-0 bg-[#76C0EC]/20 backdrop-blur-sm"
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <aside className="relative w-[280px] max-w-[80vw] bg-white h-full flex flex-col justify-between p-6 z-10 shadow-xl rounded-r-3xl border-r border-[#76C0EC]/20">
+          <aside className="relative w-[280px] max-w-[80vw] bg-white h-full flex flex-col justify-between z-10 shadow-xl">
             <div>
-              <div className="flex items-center justify-between mb-6">
-                <span className={`px-4 py-2 rounded-xl text-[12px] font-bold uppercase tracking-wider ${meta.iconBg}`}>
+              <div className="flex items-center justify-between p-4 border-b border-slate-100">
+                <span className="px-3 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider" style={{ backgroundColor: meta.theme === 'pink' ? PINK_LIGHT : BLUE_LIGHT, color: meta.theme === 'pink' ? PINK_DARK : BLUE_DARK }}>
                   {meta.label}
                 </span>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
-                  className="icon-btn hover:bg-[#f0f8fd] text-[#76C0EC] rounded-full p-2 transition-colors border-0 bg-transparent"
+                  className="text-slate-400 hover:bg-slate-100 rounded-lg p-2 transition-colors"
                 >
                   <X size={20} />
                 </button>
               </div>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col py-2">
                 {navItems.map((item) => {
                   const isActive = location.pathname.startsWith(item.path);
                   return (
@@ -355,35 +366,35 @@ const Layout = () => {
                       key={item.path}
                       to={item.path}
                       onClick={() => setMobileMenuOpen(false)}
-                      className={`relative flex items-center gap-3 px-[16px] h-[48px] rounded-2xl text-[14px] transition-all duration-200 group ${
+                      className={`flex items-center gap-3 px-6 h-[48px] text-[14px] transition-all border-l-4 ${
                         isActive
-                          ? 'bg-[#FF95A5] text-white font-bold shadow-md shadow-[#FF95A5]/30'
-                          : 'text-[#76C0EC] hover:bg-[#f0f8fd] font-semibold'
+                          ? 'font-bold bg-slate-50'
+                          : 'text-slate-700 hover:bg-slate-50 border-transparent font-medium'
                       }`}
+                      style={{ borderLeftColor: isActive ? BLUE_DARK : 'transparent', color: isActive ? BLUE_DARK : undefined }}
                     >
                       <item.icon
                         size={20}
-                        className={isActive ? 'text-white' : 'text-[#76C0EC] group-hover:text-[#FF95A5] transition-colors'}
+                        className="shrink-0"
+                        style={{ color: isActive ? BLUE_DARK : '#64748b' }}
                       />
-                      <span className={isActive ? '' : 'group-hover:text-[#FF95A5] transition-colors'}>
-                        {item.label}
-                      </span>
+                      <span>{item.label}</span>
                     </Link>
                   );
                 })}
               </div>
             </div>
 
-            <div className="pt-4 border-t border-[#76C0EC]/10">
+            <div className="p-4 border-t border-slate-100">
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
                   handleLogout();
                 }}
-                className="w-full flex items-center justify-center gap-2 px-3 h-[48px] rounded-xl text-[14px] font-bold text-[#FF95A5] bg-[#fff0f2] hover:bg-[#FF95A5] hover:text-white transition-all mb-4 cursor-pointer shadow-sm border border-[#FF95A5]/20 hover:border-transparent"
+                className="w-full flex items-center justify-center gap-2 h-[44px] rounded-lg text-[14px] font-bold text-slate-600 hover:text-red-600 bg-white border border-slate-200 hover:bg-red-50 hover:border-red-200 transition-all"
               >
-                <LogOut size={18} strokeWidth={2.5} />
-                <span>Secure Logout</span>
+                <LogOut size={18} />
+                <span>Logout</span>
               </button>
             </div>
           </aside>
@@ -391,7 +402,7 @@ const Layout = () => {
       )}
 
       {/* ── Mobile Bottom Nav ── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-[64px] bg-white border-t border-[#76C0EC]/10 flex items-center justify-around px-2 pb-[env(safe-area-inset-bottom)] z-40 rounded-t-3xl shadow-[0_-4px_24px_rgba(118,192,236,0.1)]">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-[64px] bg-white border-t border-slate-200 flex items-center justify-around px-2 pb-[env(safe-area-inset-bottom)] z-40 shadow-lg">
         {navItems.slice(0, 4).map((item) => {
           const isActive = location.pathname.startsWith(item.path);
           return (
@@ -399,11 +410,11 @@ const Layout = () => {
               key={item.path}
               to={item.path}
               className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${
-                isActive ? 'text-[#FF95A5]' : 'text-[#76C0EC] hover:text-[#FF95A5]'
+                isActive ? 'text-slate-900' : 'text-slate-500 hover:text-slate-900'
               }`}
             >
-              <item.icon size={22} className={isActive ? 'text-[#FF95A5]' : ''} />
-              <span className="text-[10px] font-bold leading-none">{item.label.split(' ')[0]}</span>
+              <item.icon size={22} style={{ color: isActive ? BLUE_DARK : '#64748b' }} className="transition-colors" />
+              <span className="text-[10px] font-semibold leading-none text-slate-700">{item.label.split(' ')[0]}</span>
             </Link>
           );
         })}

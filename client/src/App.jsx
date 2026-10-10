@@ -29,7 +29,10 @@ import DeliveryForm from './pages/DeliveryForm';
 import BabyProfile from './pages/BabyProfile';
 import GuardianPortal from './pages/GuardianPortal';
 import ConsentLog from './pages/ConsentLog';
+import RegisterBaby from './pages/RegisterBaby';
+import BabySearch from './pages/BabySearch';
 import FetusMonitor from './pages/FetusMonitor';
+import MaternalHealthPredictor from './pages/MaternalHealthPredictor';
 import AdminPanel from './pages/AdminPanel';
 import SuperAdminPanel from './pages/SuperAdminPanel';
 
@@ -170,6 +173,22 @@ function App() {
               }
             />
             <Route
+              path="/babies/search"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'receptionist', 'doctor', 'nurse']}>
+                  <BabySearch />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/babies/register"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'receptionist', 'doctor', 'nurse']}>
+                  <RegisterBaby />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/babies/:babyId"
               element={
                 <ProtectedRoute allowedRoles={ALL_STAFF}>
@@ -182,6 +201,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={ALL_STAFF}>
                   <FetusMonitor />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/maternal-health-predictor"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'doctor', 'nurse', 'superadmin']}>
+                  <MaternalHealthPredictor />
                 </ProtectedRoute>
               }
             />

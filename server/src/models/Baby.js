@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const babySchema = new mongoose.Schema({
   babyId: { type: String, required: true, unique: true, index: true },
   mother: { type: mongoose.Schema.Types.ObjectId, ref: 'Patient', required: true, index: true },
-  delivery: { type: mongoose.Schema.Types.ObjectId, ref: 'Delivery', required: true },
+  delivery: { type: mongoose.Schema.Types.ObjectId, ref: 'Delivery' },
   name: { type: String },
   sex: { type: String, enum: ['male', 'female', 'other'], required: true },
   dob: { type: Date, required: true },
