@@ -1,4 +1,74 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Poppins:wght@500;600;700&display=swap');
+
+/* ─────────────────────────────────────────────────────────
+   Landing-Page Design Tokens & Animations (byteXL style)
+   Scoped under .lp-root so app styles are never affected
+   ───────────────────────────────────────────────────────── */
+:root {
+  --lp-navy:       #0B1F4B;
+  --lp-navy-deep:  #07142F;
+  --lp-pink:       #D6336C;
+  --lp-pink-soft:  #FDE8F1;
+  --lp-pink-light: #F9A8C9;
+  --lp-off-white:  #F8F9FC;
+  --lp-slate:      #475569;
+  --lp-border:     #E5E7EF;
+  --lp-font-head:  'Plus Jakarta Sans', system-ui, sans-serif;
+  --lp-font-body:  'Inter', system-ui, sans-serif;
+}
+
+/* Scroll-behaviour for in-page anchors */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Fade-up animation */
+@keyframes lp-fadeup {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.lp-fadeup {
+  animation: lp-fadeup 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-fadeup { animation: none; }
+}
+
+/* Floating animation */
+@keyframes lp-float {
+  0%, 100% { transform: translateY(0px); }
+  50%      { transform: translateY(-8px); }
+}
+.lp-animate-float {
+  animation: lp-float 5s ease-in-out infinite;
+}
+
+/* Float delay */
+.lp-animate-float-delayed {
+  animation: lp-float 6s ease-in-out 2s infinite;
+}
+
+/* Subtle pulse glow */
+@keyframes lp-glow {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50%      { opacity: 0.75; transform: scale(1.05); }
+}
+.lp-animate-glow {
+  animation: lp-glow 4s ease-in-out infinite;
+}
+
+/* Grid pattern background like byteXL */
+.lp-grid-bg {
+  background-image: radial-gradient(rgba(11, 31, 75, 0.08) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Landing pink focus ring override */
+.lp-root *:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--lp-pink-light);
+}
+
 
 @tailwind base;
 @tailwind components;

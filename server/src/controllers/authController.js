@@ -21,6 +21,10 @@ export const login = asyncHandler(async (req, res, next) => {
     return next(new AppError('User account is inactive', 403, 'FORBIDDEN'));
   }
 
+  // Update lastLogin timestamp
+  user.lastLogin = new Date();
+  await user.save();
+
   const accessToken = signToken(user._id, 'access');
   const refreshToken = signToken(user._id, 'refresh');
 
@@ -38,6 +42,7 @@ export const login = asyncHandler(async (req, res, next) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      isApproved: user.isApproved,
       accessToken
     }
   });
@@ -58,12 +63,33 @@ export const me = asyncHandler(async (req, res) => {
 export const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password, role } = req.body;
   const passwordHash = await bcrypt.hash(password, 10);
-  const user = await User.create({ name, email, passwordHash, role });
+  
+  // The creator (admin) is req.user
+  const user = await User.create({ 
+    name, 
+    email, 
+    passwordHash, 
+    role,
+    createdBy: req.user._id,
+    hospitalRef: req.user.hospitalRef 
+  });
+  
   res.status(201).json({ success: true, data: { _id: user._id, name, email, role } });
 });
 
 export const getAllUsers = asyncHandler(async (req, res) => {
-  const users = await User.find({ isDeleted: false }).select('-passwordHash');
+  // If superadmin, they might want to see all users, otherwise restrict to hospital
+  const filter = { isDeleted: false };
+  if (req.user.role !== 'superadmin') {
+    if (req.user.hospitalRef) {
+      filter.hospitalRef = req.user.hospitalRef;
+    } else {
+      // Strict isolation: if a non-superadmin is missing a hospitalRef, return empty array to prevent data leak.
+      return res.json({ success: true, data: [] });
+    }
+  }
+  
+  const users = await User.find(filter).select('-passwordHash');
   res.json({ success: true, data: users });
 });
 

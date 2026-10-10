@@ -10,19 +10,34 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
   const endOfDay = new Date(today);
   endOfDay.setHours(23, 59, 59, 999);
 
+  let patientQuery = { isDeleted: false };
+  if (req.user.role !== 'superadmin' && req.user.hospitalRef) {
+    patientQuery.hospitalRef = req.user.hospitalRef;
+  } else if (req.user.role !== 'superadmin') {
+    // Missing hospitalRef but not superadmin -> 0 stats
+    return res.json({
+      success: true,
+      data: { todaysAppointments: 0, totalAppointments: 0, activePregnancies: 0, highRiskPregnancies: 0, totalPatients: 0, deliveriesCount: 0, highRiskList: [] }
+    });
+  }
+
+  const patientIds = await Patient.find(patientQuery).distinct('_id');
+
+  const baseQuery = { isDeleted: false, patient: { $in: patientIds } };
+
   const todaysAppointments = await Appointment.countDocuments({
-    slotStart: { $gte: today, $lte: endOfDay },
-    isDeleted: false
+    ...baseQuery,
+    slotStart: { $gte: today, $lte: endOfDay }
   });
 
-  const totalAppointments = await Appointment.countDocuments({ isDeleted: false });
-  const activePregnancies = await Pregnancy.countDocuments({ status: 'ongoing', isDeleted: false });
-  const highRiskPregnancies = await Pregnancy.countDocuments({ status: 'ongoing', riskLevel: 'high', isDeleted: false });
-  const totalPatients = await Patient.countDocuments({ isDeleted: false });
-  const deliveriesCount = await Delivery.countDocuments({ isDeleted: false });
+  const totalAppointments = await Appointment.countDocuments(baseQuery);
+  const activePregnancies = await Pregnancy.countDocuments({ ...baseQuery, status: 'ongoing' });
+  const highRiskPregnancies = await Pregnancy.countDocuments({ ...baseQuery, status: 'ongoing', riskLevel: 'high' });
+  const totalPatients = await Patient.countDocuments(patientQuery);
+  const deliveriesCount = await Delivery.countDocuments(baseQuery);
 
   // Real high risk pregnancies list from DB
-  const highRiskDocs = await Pregnancy.find({ status: 'ongoing', riskLevel: 'high', isDeleted: false })
+  const highRiskDocs = await Pregnancy.find({ ...baseQuery, status: 'ongoing', riskLevel: 'high' })
     .populate('patient', 'name motherId phone bloodGroup')
     .sort('-createdAt')
     .limit(10);

@@ -37,18 +37,27 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [highRisk, setHighRisk] = useState([]);
+  const [allPatients, setAllPatients] = useState([]);
+  const [patientFilter, setPatientFilter] = useState('all'); // all, high_risk, active
 
   const load = async () => {
     setSyncing(true);
     try {
       const headers = authHeader();
       const res = await fetch(`${API_BASE}/dashboard/stats`, { headers });
+      const pRes = await fetch(`${API_BASE}/patients`, { headers });
+      
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
           setStats(data.data);
-          if (Array.isArray(data.data.highRiskList)) setHighRisk(data.data.highRiskList);
+        }
+      }
+      
+      if (pRes.ok) {
+        const pData = await pRes.json();
+        if (pData.success) {
+          setAllPatients(pData.data);
         }
       }
     } catch (e) {
@@ -61,11 +70,40 @@ const AdminDashboard = () => {
 
   useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, []);
 
+  const getRiskLevel = (p) => {
+    if (p.currentPregnancy?.riskLevel) return p.currentPregnancy.riskLevel;
+    if (p.pregnancies?.some(pr => pr.riskLevel === 'high')) return 'high';
+    return 'low';
+  };
+
+  const filteredPatients = allPatients.filter(p => {
+    if (patientFilter === 'high_risk') return getRiskLevel(p) === 'high';
+    if (patientFilter === 'active') return p.isActive !== false;
+    return true;
+  });
+
   if (loading) return (
     <div className="flex items-center justify-center h-64">
       <Loader size={32} className="animate-spin text-purple-600" />
     </div>
   );
+
+  if (user && user.isApproved === false) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[70vh] text-center">
+        <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mb-6 shadow-sm">
+          <ShieldCheck size={40} className="text-amber-600" />
+        </div>
+        <h2 className="text-3xl font-bold text-ink-900 mb-3 font-heading">Account Pending Approval</h2>
+        <p className="text-ink-600 text-lg max-w-md">
+          Your hospital registration has been received. Please wait for a platform administrator to approve your account before you can access the admin panel.
+        </p>
+        <button className="btn btn-primary h-[48px] px-6 mt-8 opacity-75 cursor-not-allowed">
+          <AlertTriangle size={18} className="mr-2" /> Locked
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -96,64 +134,96 @@ const AdminDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* High Risk Panel */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-red-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-ink-100 flex items-center justify-between">
+        {/* Patient Filters Panel */}
+        <div className="lg:col-span-2 bg-white rounded-xl border border-[#76C0EC]/20 shadow-sm overflow-hidden flex flex-col h-[400px]">
+          <div className="px-5 py-4 border-b border-[#76C0EC]/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <AlertTriangle size={18} className="text-red-500" />
-              <h2 className="font-semibold text-ink-900 text-[15px]">High Risk Pregnancies</h2>
+              <Users size={18} className="text-[#76C0EC]" />
+              <h2 className="font-semibold text-gray-800 text-[15px]">Patient Directory Overview</h2>
             </div>
-            <span className="text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
-              {highRisk.length} active
-            </span>
+            
+            {/* Patient Filters */}
+            <div className="flex items-center gap-2 bg-[#f4fafe] p-1 rounded-lg border border-[#76C0EC]/20">
+              <button 
+                onClick={() => setPatientFilter('all')} 
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${patientFilter === 'all' ? 'bg-[#76C0EC] text-white shadow-sm' : 'text-[#76C0EC] hover:bg-[#e6f4fc]'}`}
+              >
+                All
+              </button>
+              <button 
+                onClick={() => setPatientFilter('active')} 
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${patientFilter === 'active' ? 'bg-[#76C0EC] text-white shadow-sm' : 'text-[#76C0EC] hover:bg-[#e6f4fc]'}`}
+              >
+                Active
+              </button>
+              <button 
+                onClick={() => setPatientFilter('high_risk')} 
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${patientFilter === 'high_risk' ? 'bg-[#FF95A5] text-white shadow-sm' : 'text-[#FF95A5] hover:bg-[#fff0f2]'}`}
+              >
+                High Risk
+              </button>
+            </div>
           </div>
-          <div className="divide-y divide-ink-50">
-            {highRisk.length === 0 ? (
-              <div className="p-8 text-center text-ink-400 text-sm">No high-risk pregnancies currently flagged.</div>
+          
+          <div className="flex-1 overflow-y-auto divide-y divide-[#76C0EC]/10">
+            {filteredPatients.length === 0 ? (
+              <div className="p-8 text-center text-gray-400 text-sm">No patients found for the selected filter.</div>
             ) : (
-              highRisk.map((p, i) => (
-                <Link
-                  key={p._id || i}
-                  to={`/patients/${p._id}`}
-                  className="flex items-center gap-4 px-5 py-3.5 hover:bg-red-50 transition-colors"
-                >
-                  <div className="w-9 h-9 rounded-full bg-red-100 text-red-700 font-bold text-[13px] flex items-center justify-center shrink-0">
-                    {(p.name || 'P').charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-ink-900 text-sm truncate">{p.name}</p>
-                    <p className="text-xs text-ink-500 truncate">{p.riskFactors?.join(', ') || 'Flagged High Risk'}</p>
-                  </div>
-                  <ChevronRight size={16} className="text-ink-400 shrink-0" />
-                </Link>
-              ))
+              filteredPatients.map((p, i) => {
+                const risk = getRiskLevel(p);
+                const isHighRisk = risk === 'high';
+                
+                return (
+                  <Link
+                    key={p._id || i}
+                    to={`/patients/${p._id}`}
+                    className="flex items-center gap-4 px-5 py-3.5 hover:bg-[#f4fafe] transition-colors"
+                  >
+                    <div className={`w-9 h-9 rounded-full font-bold text-[13px] flex items-center justify-center shrink-0 ${isHighRisk ? 'bg-[#fff0f2] text-[#FF95A5]' : 'bg-[#e6f4fc] text-[#76C0EC]'}`}>
+                      {(p.name || 'P').charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-800 text-sm truncate">{p.name}</p>
+                      <p className="text-xs text-gray-500 truncate">{p.motherId || p._id?.slice(-8)} A {p.phone || 'N/A'}</p>
+                    </div>
+                    
+                    {isHighRisk && (
+                      <span className="shrink-0 text-[10px] font-bold text-[#FF95A5] bg-[#fff0f2] border border-[#FF95A5]/20 px-2 py-0.5 rounded-full uppercase">
+                        High Risk
+                      </span>
+                    )}
+                    
+                    <ChevronRight size={16} className="text-[#76C0EC]/50 shrink-0" />
+                  </Link>
+                );
+              })
             )}
           </div>
         </div>
 
         {/* Admin Quick Actions */}
-        <div className="bg-white rounded-xl border border-ink-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-ink-100">
-            <h2 className="font-semibold text-ink-900 text-[15px]">Admin Actions</h2>
+        <div className="bg-white rounded-xl border border-[#76C0EC]/20 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-[#76C0EC]/10 bg-[#f4fafe]">
+            <h2 className="font-semibold text-[#76C0EC] text-[15px]">Admin Actions</h2>
           </div>
           <div className="p-4 space-y-2">
             {[
-              { to: '/admin', icon: Settings, label: 'User Management', sub: 'Create, edit, deactivate staff accounts', color: 'purple' },
-              { to: '/patients/register', icon: UserPlus, label: 'Register Patient', sub: 'New mother/patient registration', color: 'blue' },
-              { to: '/patients/search', icon: Users, label: 'Patient Directory', sub: 'View all registered patients', color: 'green' },
-              { to: '/dashboard/receptionist', icon: Calendar, label: 'OPD Queue', sub: 'Receptionist appointment view', color: 'pink' },
+              { to: '/admin', icon: Settings, label: 'User Management', sub: 'Create, edit, deactivate staff accounts' },
+              { to: '/patients/register', icon: UserPlus, label: 'Register Patient', sub: 'New mother/patient registration' },
+              { to: '/patients/search', icon: Users, label: 'Patient Directory', sub: 'View all registered patients' },
+              { to: '/dashboard/receptionist', icon: Calendar, label: 'OPD Queue', sub: 'Receptionist appointment view' },
             ].map(a => (
               <Link
                 key={a.to + a.label}
                 to={a.to}
-                className="flex items-start gap-3 p-3 rounded-xl hover:bg-purple-50 transition-colors border border-transparent hover:border-purple-100 group"
+                className="flex items-start gap-3 p-3 rounded-xl hover:bg-[#fff0f2] transition-colors border border-transparent hover:border-[#FF95A5]/20 group"
               >
-                <div className={`w-9 h-9 rounded-lg bg-${a.color}-100 flex items-center justify-center shrink-0 mt-0.5`}>
-                  <a.icon size={18} className={`text-${a.color}-600`} />
+                <div className="w-9 h-9 rounded-lg bg-[#f4fafe] flex items-center justify-center shrink-0 mt-0.5 text-[#76C0EC] group-hover:bg-[#FF95A5] group-hover:text-white transition-colors">
+                  <a.icon size={18} />
                 </div>
                 <div>
-                  <p className="font-semibold text-ink-900 text-[13px] group-hover:text-purple-700">{a.label}</p>
-                  <p className="text-[11px] text-ink-400 mt-0.5">{a.sub}</p>
+                  <p className="font-semibold text-gray-800 text-[13px] group-hover:text-[#FF95A5] transition-colors">{a.label}</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">{a.sub}</p>
                 </div>
               </Link>
             ))}

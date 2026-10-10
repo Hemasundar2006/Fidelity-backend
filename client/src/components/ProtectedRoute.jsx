@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext';
  * Redirects wrong-role users to their own dashboard.
  */
 const ROLE_HOME = {
+  superadmin: '/super-admin',
   admin: '/dashboard/admin',
   receptionist: '/dashboard/receptionist',
   doctor: '/dashboard/doctor',

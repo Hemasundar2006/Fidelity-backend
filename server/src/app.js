@@ -13,6 +13,7 @@ import babyRoutes from './routes/babyRoutes.js';
 import invoiceRoutes from './routes/invoiceRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
+import hospitalRoutes from './routes/hospitalRoutes.js';
 
 import errorHandler from './middleware/errorMiddleware.js';
 
@@ -40,6 +41,7 @@ app.use('/api/v1/babies', babyRoutes);
 app.use('/api/v1/invoices', invoiceRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/uploads', uploadRoutes);
+app.use('/api/v1/hospitals', hospitalRoutes);
 
 app.use(errorHandler);
 

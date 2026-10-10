@@ -23,6 +23,7 @@ export const registerPatient = asyncHandler(async (req, res) => {
     ...req.body,
     motherId,
     qr,
+    hospitalRef: req.user.hospitalRef,
     createdBy: req.user._id
   });
 
@@ -41,6 +42,14 @@ export const getPatients = asyncHandler(async (req, res) => {
       { motherId: { $regex: q, $options: 'i' } },
       { phone: { $regex: q, $options: 'i' } }
     ];
+  }
+
+  // Tenant Isolation
+  if (req.user.role !== 'superadmin' && req.user.hospitalRef) {
+    query.hospitalRef = req.user.hospitalRef;
+  } else if (req.user.role !== 'superadmin') {
+    // Failsafe: if they have no hospitalRef and are not superadmin, they should see nothing.
+    return res.json({ success: true, data: [], meta: { page: 1, limit: Number(limit), total: 0 } });
   }
 
   const patients = await Patient.find(query)

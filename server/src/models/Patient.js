@@ -37,6 +37,7 @@ const patientSchema = new mongoose.Schema({
     method: { type: String, enum: ['in_person', 'portal'] }
   }],
   isDeleted: { type: Boolean, default: false },
+  hospitalRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Hospital' },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true });
 

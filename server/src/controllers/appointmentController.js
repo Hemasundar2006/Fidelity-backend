@@ -341,6 +341,14 @@ export const getAppointments = asyncHandler(async (req, res) => {
   const { date, doctor, status } = req.query;
   const filter = { isDeleted: false };
 
+  // Tenant Isolation
+  if (req.user && req.user.role !== 'superadmin' && req.user.hospitalRef) {
+    const patientIds = await Patient.find({ hospitalRef: req.user.hospitalRef }).distinct('_id');
+    filter.patient = { $in: patientIds };
+  } else if (req.user && req.user.role !== 'superadmin') {
+    return res.json({ success: true, data: [] });
+  }
+
   if (doctor && doctor !== 'All') {
     filter.doctor = doctor;
   }

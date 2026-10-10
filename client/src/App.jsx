@@ -6,6 +6,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 // Public Pages
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
+import HospitalRegister from './pages/HospitalRegister';
 
 // Layout
 import Layout from './components/Layout';
@@ -29,9 +30,10 @@ import BabyProfile from './pages/BabyProfile';
 import GuardianPortal from './pages/GuardianPortal';
 import ConsentLog from './pages/ConsentLog';
 import AdminPanel from './pages/AdminPanel';
+import SuperAdminPanel from './pages/SuperAdminPanel';
 
 // All staff roles
-const ALL_STAFF = ['admin', 'receptionist', 'doctor', 'nurse', 'lab', 'pharmacy'];
+const ALL_STAFF = ['superadmin', 'admin', 'receptionist', 'doctor', 'nurse', 'lab', 'pharmacy'];
 
 function App() {
   return (
@@ -42,6 +44,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/book" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/hospital-register" element={<HospitalRegister />} />
 
           {/* ── Guardian (Mother/Patient) Portal ── */}
           <Route path="/portal" element={<GuardianPortal />} />
@@ -176,8 +179,16 @@ function App() {
             <Route
               path="/admin"
               element={
-                <ProtectedRoute allowedRoles={['admin']}>
+                <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
                   <AdminPanel />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/super-admin"
+              element={
+                <ProtectedRoute allowedRoles={['superadmin']}>
+                  <SuperAdminPanel />
                 </ProtectedRoute>
               }
             />
