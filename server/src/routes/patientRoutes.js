@@ -6,11 +6,13 @@ import {
   getPatientTimeline, getPatientSummary, getAccessLog,
   addConsent, removeConsent, addVisit, getVisits,
   addReport, getReports, checkDuplicateTest,
-  addPregnancy
+  addPregnancy, loginPatient
 } from '../controllers/patientController.js';
 import { validateRequest, patientSchema } from '../utils/zodSchemas.js';
 
 const router = express.Router();
+
+router.post('/login', loginPatient);
 
 router.route('/')
   .post(protect, authorize('admin', 'receptionist'), validateRequest(patientSchema), auditMiddleware('create', 'Patient'), registerPatient)

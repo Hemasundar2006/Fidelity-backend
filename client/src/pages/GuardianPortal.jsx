@@ -10,10 +10,30 @@ const GuardianPortal = () => {
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState(1); // 1 = Phone, 2 = OTP
   const [patientData, setPatientData] = useState(null);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [logoutCountdown, setLogoutCountdown] = useState(10);
   
   // Real data state
   const [savedDocs, setSavedDocs] = useState([]);
   const [savedPrecautions, setSavedPrecautions] = useState([]);
+
+  useEffect(() => {
+    let timer;
+    if (showLogoutConfirm) {
+      if (logoutCountdown > 0) {
+        timer = setTimeout(() => setLogoutCountdown(c => c - 1), 1000);
+      } else {
+        setIsLoggedIn(false);
+        setShowLogoutConfirm(false);
+      }
+    }
+    return () => clearTimeout(timer);
+  }, [showLogoutConfirm, logoutCountdown]);
+
+  const initiateLogout = () => {
+    setShowLogoutConfirm(true);
+    setLogoutCountdown(10);
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -341,7 +361,7 @@ const GuardianPortal = () => {
                 <p className="text-sm text-ink-500 mb-3">MOM-2026-000001</p>
                 <span className="inline-block px-3 py-1 bg-green-50 text-green-700 text-xs rounded-full font-semibold border border-green-200 mb-6">Active Patient</span>
                 
-                <button onClick={() => setIsLoggedIn(false)} className="w-full flex items-center justify-center gap-2 py-3 text-red-600 text-sm font-semibold border border-red-100 bg-red-50 cursor-pointer hover:bg-red-100 rounded-xl transition-colors">
+                <button onClick={initiateLogout} className="w-full flex items-center justify-center gap-2 py-3 text-red-600 text-sm font-semibold border border-red-100 bg-red-50 cursor-pointer hover:bg-red-100 rounded-xl transition-colors">
                   <LogOut size={16} /> Sign Out
                 </button>
               </div>
@@ -390,7 +410,29 @@ const GuardianPortal = () => {
   ];
 
   return (
-    <div className="flex h-screen bg-ink-50 font-body overflow-hidden">
+    <div className="flex h-screen bg-ink-50 font-body overflow-hidden relative">
+      
+      {/* Logout Confirmation Modal Overlay */}
+      {showLogoutConfirm && (
+        <div className="absolute inset-0 z-50 bg-ink-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 md:p-8 max-w-sm w-full shadow-2xl border border-ink-200 text-center">
+            <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <LogOut className="text-red-500" size={32} />
+            </div>
+            <h3 className="text-xl font-bold text-ink-900 mb-2">Sign Out?</h3>
+            <p className="text-ink-600 font-medium mb-6">Are you sure you want to sign out of the patient portal? Logging out automatically in <span className="font-bold text-red-500">{logoutCountdown}s</span>.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowLogoutConfirm(false)} className="flex-1 py-3 bg-ink-100 hover:bg-ink-200 text-ink-700 font-bold rounded-xl transition-colors">
+                Cancel
+              </button>
+              <button onClick={() => { setIsLoggedIn(false); setShowLogoutConfirm(false); }} className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors shadow-lg shadow-red-500/30">
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Desktop Sidebar */}
       <aside className="w-64 bg-white border-r border-ink-200 hidden md:flex flex-col">
         <div className="h-[72px] flex items-center px-6 border-b border-ink-100">
@@ -418,7 +460,7 @@ const GuardianPortal = () => {
           ))}
         </nav>
         <div className="p-4 border-t border-ink-100">
-          <button onClick={() => setIsLoggedIn(false)} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-ink-600 hover:bg-red-50 hover:text-red-700 transition-colors text-sm font-semibold cursor-pointer border-0 bg-transparent">
+          <button onClick={initiateLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-ink-600 hover:bg-red-50 hover:text-red-700 transition-colors text-sm font-semibold cursor-pointer border-0 bg-transparent">
             <LogOut size={18} /> Sign Out
           </button>
         </div>

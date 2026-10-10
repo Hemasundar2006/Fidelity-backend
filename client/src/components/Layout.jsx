@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, UserPlus, Settings, LogOut,
   Baby, Bell, Search, Menu, Globe, FlaskConical, Activity,
   Stethoscope, HeartPulse, Pill, ShieldCheck,
-  X, PanelLeftClose, PanelLeftOpen
+  X, PanelLeftClose, PanelLeftOpen, Terminal, Package, Building2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -19,7 +19,10 @@ const PINK_LIGHT = '#fff0f2';
 // Nav items by role
 const ROLE_NAV = {
   superadmin: [
-    { path: '/super-admin', label: 'Platform Admin', icon: Settings },
+    { path: '/super-admin', label: 'Platform Overview', icon: LayoutDashboard },
+    { path: '/super-admin/hospitals', label: 'Partner Hospitals', icon: Building2 },
+    { path: '/super-admin/offerings', label: 'Platform Offerings', icon: Package },
+    { path: '/super-admin/logs', label: 'System Logs', icon: Terminal },
   ],
   admin: [
     { path: '/dashboard/admin', label: 'Admin Overview', icon: LayoutDashboard },
@@ -42,6 +45,7 @@ const ROLE_NAV = {
     { path: '/dashboard/doctor', label: 'Clinical Dashboard', icon: Stethoscope },
     { path: '/patients/search', label: 'My Patients', icon: Users },
     { path: '/babies/search', label: 'Baby Directory', icon: Baby },
+    { path: '/fetus-monitor', label: 'Fetal Monitor', icon: Activity },
     { path: '/maternal-health-predictor', label: 'Risk Predictor', icon: HeartPulse },
   ],
   nurse: [
@@ -49,6 +53,7 @@ const ROLE_NAV = {
     { path: '/patients/search', label: 'Patient Directory', icon: Users },
     { path: '/babies/search', label: 'Baby Directory', icon: Baby },
     { path: '/babies/register', label: 'Register Baby', icon: Baby },
+    { path: '/fetus-monitor', label: 'Fetal Monitor', icon: Activity },
     { path: '/maternal-health-predictor', label: 'Risk Predictor', icon: HeartPulse },
   ],
   lab: [
@@ -80,6 +85,9 @@ const Layout = () => {
   const { user, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [logoutCountdown, setLogoutCountdown] = useState(10);
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
     const saved = localStorage.getItem('jl_sidebar_open');
@@ -107,9 +115,33 @@ const Layout = () => {
     }
   };
 
-  const handleLogout = async () => {
+  useEffect(() => {
+    let timer;
+    if (showLogoutModal && logoutCountdown > 0) {
+      timer = setInterval(() => {
+        setLogoutCountdown(prev => prev - 1);
+      }, 1000);
+    } else if (showLogoutModal && logoutCountdown === 0) {
+      handleConfirmLogout();
+    }
+    return () => clearInterval(timer);
+  }, [showLogoutModal, logoutCountdown]);
+
+  const handleLogoutClick = () => {
+    setMobileMenuOpen(false);
+    setProfileDropdownOpen(false);
+    setLogoutCountdown(10);
+    setShowLogoutModal(true);
+  };
+
+  const handleConfirmLogout = async () => {
+    setShowLogoutModal(false);
     await logout();
     navigate('/login');
+  };
+
+  const handleCancelLogout = () => {
+    setShowLogoutModal(false);
   };
 
   return (
@@ -122,23 +154,15 @@ const Layout = () => {
       >
         <div className="flex items-center justify-between h-[64px] px-4 border-b border-slate-200 shrink-0">
           {isSidebarOpen ? (
-            <div className="flex items-center gap-3 overflow-hidden">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm" style={{ backgroundColor: BLUE_LIGHT }}>
-                <Baby size={20} style={{ color: BLUE_DARK }} />
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="font-heading font-extrabold text-[18px] leading-tight tracking-tight truncate" style={{ color: BLUE_DARK }}>
-                  JanmaLink
-                </span>
-              </div>
+            <div className="flex items-center overflow-hidden shrink-0 py-1">
+              <img src="/logo.png" alt="JanmaLink" className="h-10 w-auto" />
             </div>
           ) : (
             <button
               onClick={toggleSidebar}
-              className="w-10 h-10 mx-auto rounded-lg flex items-center justify-center shrink-0 shadow-sm hover:scale-105 transition-all cursor-pointer"
-              style={{ backgroundColor: BLUE_LIGHT }}
+              className="mx-auto flex items-center justify-center shrink-0 hover:scale-105 transition-all cursor-pointer bg-white"
             >
-              <Baby size={22} style={{ color: BLUE_DARK }} />
+              <img src="/logo.png" alt="JL" className="h-8 w-auto object-cover object-left" style={{ maxWidth: '32px' }} />
             </button>
           )}
 
@@ -225,7 +249,7 @@ const Layout = () => {
         <div className="p-4 border-t border-slate-200 shrink-0">
           {isSidebarOpen ? (
             <button
-              onClick={handleLogout}
+              onClick={handleLogoutClick}
               className="w-full flex items-center justify-center gap-2 px-3 h-[40px] rounded-lg text-[13px] font-bold text-slate-600 hover:text-red-600 hover:bg-red-50 border border-slate-200 hover:border-red-200 transition-all cursor-pointer"
             >
               <LogOut size={16} className="shrink-0" />
@@ -233,7 +257,7 @@ const Layout = () => {
             </button>
           ) : (
             <button
-              onClick={handleLogout}
+              onClick={handleLogoutClick}
               title="Logout"
               className="w-[40px] h-[40px] mx-auto flex items-center justify-center rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 border border-slate-200 hover:border-red-200 transition-all cursor-pointer"
             >
@@ -255,9 +279,8 @@ const Layout = () => {
             >
               <Menu size={22} />
             </button>
-            <div className="flex items-center gap-2 md:hidden">
-              <Baby size={20} style={{ color: BLUE_DARK }} />
-              <span className="font-heading font-bold text-[16px]" style={{ color: BLUE_DARK }}>JanmaLink</span>
+            <div className="flex items-center md:hidden">
+              <img src="/logo.png" alt="JanmaLink" className="h-8 w-auto" />
             </div>
 
             {/* Desktop: Hospital indicator badge */}
@@ -312,22 +335,49 @@ const Layout = () => {
               <Bell size={18} />
               <span className="absolute top-2 right-2 w-[8px] h-[8px] rounded-full border-2 border-white" style={{ backgroundColor: PINK }} />
             </button>
-            <div className="w-px h-6 bg-slate-200 hidden md:block" />
-            <div className="flex items-center gap-3 shrink-0 cursor-pointer hover:opacity-80 transition-opacity">
-              <div className="text-right hidden sm:block">
-                <span className="block text-[13px] font-bold text-slate-800 leading-tight">
-                  {user?.name || 'Staff'}
-                </span>
-                <span className="block text-[11px] text-slate-500 font-medium capitalize mt-0.5">
-                  {meta.label}
-                </span>
-              </div>
-              <div
-                className="w-[36px] h-[36px] rounded-lg text-white font-bold text-[13px] flex items-center justify-center shadow-sm shrink-0"
-                style={{ backgroundColor: meta.theme === 'pink' ? PINK_DARK : BLUE_DARK }}
+            <div className="relative">
+              <div 
+                className="flex items-center gap-3 shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
               >
-                {getInitials(user?.name)}
+                <div className="text-right hidden sm:block">
+                  <span className="block text-[13px] font-bold text-slate-800 leading-tight">
+                    {user?.name || 'Staff'}
+                  </span>
+                  <span className="block text-[11px] text-slate-500 font-medium capitalize mt-0.5">
+                    {meta.label}
+                  </span>
+                </div>
+                <div
+                  className="w-[36px] h-[36px] rounded-lg text-white font-bold text-[13px] flex items-center justify-center shadow-sm shrink-0"
+                  style={{ backgroundColor: meta.theme === 'pink' ? PINK_DARK : BLUE_DARK }}
+                >
+                  {getInitials(user?.name)}
+                </div>
               </div>
+
+              {/* Profile Dropdown */}
+              {profileDropdownOpen && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setProfileDropdownOpen(false)} 
+                  />
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 z-50 overflow-hidden py-1">
+                    <div className="px-4 py-2 border-b border-slate-100">
+                      <p className="text-[13px] font-bold text-slate-800">{user?.name}</p>
+                      <p className="text-[11px] text-slate-500">{user?.email}</p>
+                    </div>
+                    <button
+                      onClick={handleLogoutClick}
+                      className="w-full text-left px-4 py-2 text-[13px] font-medium text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
+                    >
+                      <LogOut size={14} />
+                      Sign out
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </header>
@@ -387,10 +437,7 @@ const Layout = () => {
 
             <div className="p-4 border-t border-slate-100">
               <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  handleLogout();
-                }}
+                onClick={handleLogoutClick}
                 className="w-full flex items-center justify-center gap-2 h-[44px] rounded-lg text-[14px] font-bold text-slate-600 hover:text-red-600 bg-white border border-slate-200 hover:bg-red-50 hover:border-red-200 transition-all"
               >
                 <LogOut size={18} />
@@ -419,6 +466,38 @@ const Layout = () => {
           );
         })}
       </nav>
+      {/* ── Logout Modal ── */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={handleCancelLogout}></div>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden relative z-10 flex flex-col items-center p-6 text-center">
+            <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center text-red-500 mb-4 border border-red-100 shadow-sm">
+              <LogOut size={28} />
+            </div>
+            <h2 className="text-xl font-bold font-heading text-slate-900 mb-2">Confirm Logout</h2>
+            <p className="text-sm text-slate-600 mb-6 px-2">
+              Are you sure you want to securely log out of your session?
+              <br/><br/>
+              Auto-logging out in <strong className="text-red-600">{logoutCountdown}</strong> seconds...
+            </p>
+            <div className="w-full flex gap-3">
+              <button 
+                onClick={handleCancelLogout}
+                className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors border border-slate-200"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleConfirmLogout}
+                className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors shadow-sm shadow-red-200"
+              >
+                Yes, Log out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

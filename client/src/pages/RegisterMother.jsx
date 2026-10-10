@@ -15,6 +15,7 @@ const initialFormData = {
   partner: { name: '', phone: '', dob: '', bloodGroup: '' },
   photo: null,
   idProof: null,
+  assignedDoctor: '',
   consents: { treatment: false, data_sharing: false, ml_usage: false }
 };
 
@@ -31,6 +32,23 @@ const RegisterMother = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successData, setSuccessData] = useState(null);
   const [errors, setErrors] = useState({});
+  const [doctors, setDoctors] = useState([]);
+  const { authHeader } = useAuth();
+
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/auth/doctors`, { headers: authHeader() });
+        const data = await res.json();
+        if (data.success) {
+          setDoctors(data.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch doctors', err);
+      }
+    };
+    fetchDoctors();
+  }, [authHeader]);
 
   useEffect(() => {
     if (!successData) {
@@ -126,8 +144,6 @@ const RegisterMother = () => {
     }, 1000);
   };
 
-  const { authHeader } = useAuth();
-
   const handleSubmit = async () => {
     if (!validateStep(4)) return;
     setIsSubmitting(true);
@@ -144,6 +160,10 @@ const RegisterMother = () => {
           ...formData.idProof
         } : null
       };
+
+      if (!payload.assignedDoctor) {
+        delete payload.assignedDoctor;
+      }
 
       const res = await fetch(`${API_BASE}/patients`, {
         method: 'POST',
@@ -304,6 +324,15 @@ const RegisterMother = () => {
                 <select className="input max-sm:h-[48px] max-sm:text-[16px] bg-white" value={formData.bloodGroup} onChange={e => updateForm('bloodGroup', e.target.value)}>
                   <option value="">Select</option>
                   <option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>O+</option><option>O-</option><option>AB+</option><option>AB-</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-[6px]">
+                <label className="text-[12px] leading-[16px] uppercase tracking-[0.06em] font-semibold text-ink-600">Assign Doctor</label>
+                <select className="input max-sm:h-[48px] max-sm:text-[16px] bg-white" value={formData.assignedDoctor} onChange={e => updateForm('assignedDoctor', e.target.value)}>
+                  <option value="">-- No specific doctor --</option>
+                  {doctors.map(d => (
+                    <option key={d._id} value={d._id}>Dr. {d.name}</option>
+                  ))}
                 </select>
               </div>
               <div className="md:col-span-2 my-1"><hr className="border-ink-100 m-0" /></div>

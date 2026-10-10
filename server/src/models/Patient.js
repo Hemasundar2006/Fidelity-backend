@@ -38,7 +38,8 @@ const patientSchema = new mongoose.Schema({
   }],
   isDeleted: { type: Boolean, default: false },
   hospitalRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Hospital' },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  assignedDoctor: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true });
 
 patientSchema.pre(/^find/, function() {

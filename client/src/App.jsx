@@ -7,6 +7,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import HospitalRegister from './pages/HospitalRegister';
+import BookConsultation from './pages/BookConsultation';
 
 // Layout
 import Layout from './components/Layout';
@@ -35,6 +36,8 @@ import FetusMonitor from './pages/FetusMonitor';
 import MaternalHealthPredictor from './pages/MaternalHealthPredictor';
 import AdminPanel from './pages/AdminPanel';
 import SuperAdminPanel from './pages/SuperAdminPanel';
+import SuperAdminLogs from './pages/SuperAdminLogs';
+import SuperAdminOfferings from './pages/SuperAdminOfferings';
 
 // All staff roles
 const ALL_STAFF = ['superadmin', 'admin', 'receptionist', 'doctor', 'nurse', 'lab', 'pharmacy'];
@@ -46,7 +49,7 @@ function App() {
         <Routes>
           {/* ── Public ── */}
           <Route path="/" element={<LandingPage />} />
-          <Route path="/book" element={<LandingPage />} />
+          <Route path="/book" element={<BookConsultation />} />
           <Route path="/login" element={<Login />} />
           <Route path="/hospital-register" element={<HospitalRegister />} />
 
@@ -225,6 +228,30 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['superadmin']}>
                   <SuperAdminPanel />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/super-admin/hospitals"
+              element={
+                <ProtectedRoute allowedRoles={['superadmin']}>
+                  <SuperAdminPanel />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/super-admin/logs"
+              element={
+                <ProtectedRoute allowedRoles={['superadmin']}>
+                  <SuperAdminLogs />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/super-admin/offerings"
+              element={
+                <ProtectedRoute allowedRoles={['superadmin']}>
+                  <SuperAdminOfferings />
                 </ProtectedRoute>
               }
             />

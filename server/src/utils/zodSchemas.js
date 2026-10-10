@@ -59,7 +59,8 @@ export const patientSchema = z.object({
       method: z.string().optional()
     })),
     z.record(z.any())
-  ]).optional()
+  ]).optional(),
+  assignedDoctor: z.string().optional()
 });
 
 export const babyRegistrationSchema = z.object({

@@ -133,6 +133,33 @@ export const getAllUsers = asyncHandler(async (req, res) => {
   res.json({ success: true, data: users });
 });
 
+export const getDoctors = asyncHandler(async (req, res) => {
+  const filter = { isDeleted: false, role: 'doctor' };
+  
+  if (req.user.role !== 'superadmin') {
+    let hospitalId = req.user.hospitalRef;
+    if (!hospitalId) {
+      const hosp = await Hospital.findOne({ adminRef: req.user._id });
+      if (hosp) hospitalId = hosp._id;
+    }
+    
+    const orConditions = [{ createdBy: req.user._id }];
+    if (hospitalId) orConditions.push({ hospitalRef: hospitalId });
+    
+    const emailDomain = req.user.email && req.user.email.includes('@')
+      ? req.user.email.split('@')[1]
+      : null;
+    if (emailDomain && !['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com'].includes(emailDomain.toLowerCase())) {
+      orConditions.push({ email: new RegExp('@' + emailDomain + '$', 'i') });
+    }
+    
+    if (orConditions.length > 0) filter.$or = orConditions;
+  }
+  
+  const doctors = await User.find(filter).select('name email role');
+  res.json({ success: true, data: doctors });
+});
+
 import Patient from '../models/Patient.js';
 
 export const patientLogin = asyncHandler(async (req, res, next) => {

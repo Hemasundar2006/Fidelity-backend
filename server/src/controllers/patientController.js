@@ -8,6 +8,7 @@ import { generateId } from '../services/idGenerator.js';
 import { generateQR } from '../services/qrService.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import AppError from '../utils/AppError.js';
+import jwt from 'jsonwebtoken';
 
 export const registerPatient = asyncHandler(async (req, res) => {
   const { phone, dob } = req.body;
@@ -90,6 +91,11 @@ export const getPatients = asyncHandler(async (req, res) => {
   } else if (req.user.role !== 'superadmin') {
     // Failsafe: if they have no hospitalRef and are not superadmin, they should see nothing.
     return res.json({ success: true, data: [], meta: { page: 1, limit: Number(limit), total: 0 } });
+  }
+
+  // Doctor Isolation
+  if (req.user.role === 'doctor') {
+    query.assignedDoctor = req.user._id;
   }
 
   const patients = await Patient.find(query)
@@ -255,3 +261,33 @@ export const addPregnancy = asyncHandler(async (req, res) => {
 
   res.status(201).json({ success: true, data: { pregnancyNo: pregnancy.pregnancyNo, edd: pregnancy.edd, status: pregnancy.status, _id: pregnancy._id } });
 });
+
+export const loginPatient = async (req, res) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) {
+      return res.status(400).json({ success: false, message: 'Phone number is required' });
+    }
+    
+    // Find patient by phone
+    const patient = await Patient.findOne({ phone });
+    if (!patient) {
+      return res.status(404).json({ success: false, message: 'No patient found with this mobile number' });
+    }
+    
+    // Create JWT for patient
+    const token = jwt.sign(
+      { id: patient._id, role: 'patient', name: patient.name, hospitalId: patient.hospital },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    
+    res.status(200).json({
+      success: true,
+      token,
+      data: patient
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error logging in patient', error: error.message });
+  }
+};
