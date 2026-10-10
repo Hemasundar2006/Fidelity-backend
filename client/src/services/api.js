@@ -150,3 +150,57 @@ export const fetchDashboardStats = async () => {
   }
   return null;
 };
+
+// 7. Bilingual RAG Clinical Engine: Report-Based Risk Prediction
+export const predictRagReport = async (reportData) => {
+  const res = await fetch(`${API_BASE}/rag/predict-report`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(reportData)
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data?.message || data?.error?.message || 'Report prediction failed');
+  }
+  return data.data;
+};
+
+// 8. Bilingual RAG Clinical Engine: Voice & Text Spoken Chat
+export const askRagChat = async ({ query, language = 'en', patientContext = null }) => {
+  const res = await fetch(`${API_BASE}/rag/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query, language, patientContext })
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data?.message || data?.error?.message || 'Chat query failed');
+  }
+  return data.data;
+};
+
+// 9. Bilingual RAG Clinical Engine: Fetch Reference Tables
+export const fetchRagReference = async () => {
+  const res = await fetch(`${API_BASE}/rag/reference`);
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data?.message || 'Failed to fetch RAG reference tables');
+  }
+  return data.data;
+};
+
+// 10. Dedicated Trilingual Personal Health Assistant for Logged-in Patient
+export const askRagPersonalAssistant = async ({ patientId, query, conversationHistory = [], language = 'te' }) => {
+  const res = await fetch(`${API_BASE}/rag/patient-chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ patientId, query, conversationHistory, language })
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data?.message || data?.error?.message || 'Personal assistant query failed');
+  }
+  return data.data;
+};
+
+

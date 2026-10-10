@@ -139,8 +139,11 @@ const LandingPage = () => {
             <Link to="/portal" className="px-4 py-2.5 text-xs font-bold text-slate-700 bg-white/90 hover:bg-white border border-slate-200/80 rounded-xl transition-all shadow-sm">
               Patient Portal
             </Link>
-            <Link to="/login" className="px-4 py-2.5 text-xs font-bold text-slate-700 hover:text-slate-900 transition-all">
-              Staff Login
+            <Link to="/login" className="px-3.5 py-2 text-xs font-bold text-slate-700 hover:text-blue-700 transition-all flex items-center gap-1.5">
+              <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shadow-xs">
+                <Stethoscope size={11} />
+              </div>
+              <span>Staff Login</span>
             </Link>
             <Link to="/hospital-register" className="px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl shadow-lg shadow-blue-500/25 hover:-translate-y-0.5 transition-all">
               Partner Hospital
@@ -179,8 +182,11 @@ const LandingPage = () => {
               <Link to="/portal" className="w-full py-3.5 text-center text-sm font-bold bg-slate-100 text-slate-800 rounded-xl">
                 Patient Portal
               </Link>
-              <Link to="/login" className="w-full py-3.5 text-center text-sm font-bold bg-slate-100 text-slate-800 rounded-xl">
-                Staff Login
+              <Link to="/login" className="w-full py-3.5 text-center text-sm font-bold bg-slate-100 text-slate-800 rounded-xl flex items-center justify-center gap-2">
+                <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shadow-xs">
+                  <Stethoscope size={12} />
+                </div>
+                <span>Staff Login</span>
               </Link>
               <Link to="/hospital-register" className="w-full py-3.5 text-center text-sm font-bold bg-slate-900 text-white rounded-xl">
                 Partner With Us

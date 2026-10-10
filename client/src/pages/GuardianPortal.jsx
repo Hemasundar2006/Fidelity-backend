@@ -3,6 +3,7 @@ import { Home, FileText, Baby, Shield, User, Calendar, Syringe, ChevronRight, Lo
 import { Link } from 'react-router-dom';
 import { API_BASE } from '../config';
 import { generateDiagnosticPdf } from '../services/pdfReportGenerator';
+import JanmaLinkAIAssistant from '../components/JanmaLinkAIAssistant';
 
 const GuardianPortal = () => {
   const [activeTab, setActiveTab] = useState('home');
@@ -15,6 +16,7 @@ const GuardianPortal = () => {
   const [selectedViewReport, setSelectedViewReport] = useState(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [logoutCountdown, setLogoutCountdown] = useState(10);
+  const [showCopilot, setShowCopilot] = useState(false);
   
   // Real data state
   const [savedDocs, setSavedDocs] = useState([]);
@@ -252,6 +254,32 @@ const GuardianPortal = () => {
               </div>
             </div>
             
+            {/* JanmaLink Bilingual Voice & Clinical RAG Copilot Banner */}
+            <div className="bg-gradient-to-r from-teal-700 via-cyan-800 to-slate-900 rounded-2xl p-5 text-white shadow-md flex flex-col sm:flex-row items-center justify-between gap-4 border border-teal-500/30">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-6 h-6 text-emerald-300 animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-white m-0">JanmaLink Voice & Clinical AI Copilot</h3>
+                    <span className="text-[10px] bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 px-2 py-0.5 rounded-full font-semibold">
+                      తెలుగు & English
+                    </span>
+                  </div>
+                  <p className="text-xs text-cyan-200 m-0 mt-0.5">
+                    Speak your question in Telugu or English • Listen to spoken answers • Get report predictions, food choices & medication routine
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowCopilot(true)}
+                className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-xl text-xs font-bold shadow-md hover:scale-105 active:scale-95 transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer"
+              >
+                <span>🎤 మాట్లాడండి & వినండి / Talk & Listen</span>
+              </button>
+            </div>
+
             {/* Real Maternal Risk Assessment & Clinical Vitals Card */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-ink-100">
               <div className="flex flex-wrap justify-between items-center gap-2 mb-4 pb-3 border-b border-ink-50">
@@ -811,6 +839,15 @@ const GuardianPortal = () => {
           </div>
         </div>
       )}
+
+
+
+
+      <JanmaLinkAIAssistant 
+        isOpen={showCopilot} 
+        onClose={() => setShowCopilot(false)} 
+        patientContext={patientProfile || patientData} 
+      />
     </div>
   );
 };

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Calendar, FileText, Baby, Activity, AlertCircle, Loader, UploadCloud, ShieldAlert } from 'lucide-react';
+import { Calendar, FileText, Baby, Activity, AlertCircle, Loader, UploadCloud, ShieldAlert, Volume2, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE } from '../config';
+import JanmaLinkAIAssistant from '../components/JanmaLinkAIAssistant';
 
 const PatientProfile = () => {
   const { id } = useParams();
@@ -12,6 +13,7 @@ const PatientProfile = () => {
   const [timelineEvents, setTimelineEvents] = useState([]);
   const [summaryBullets, setSummaryBullets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showCopilot, setShowCopilot] = useState(false);
 
   useEffect(() => {
     const fetchPatientData = async () => {
@@ -118,6 +120,13 @@ const PatientProfile = () => {
           >
             <ShieldAlert size={16} /> AI Risk Analyzer
           </Link>
+          <button
+            onClick={() => setShowCopilot(true)}
+            className="btn bg-gradient-to-r from-teal-600 to-cyan-700 hover:from-teal-700 hover:to-cyan-800 text-white font-semibold flex items-center gap-1.5 shadow-sm max-sm:flex-1 h-[40px] max-sm:h-[48px] max-sm:text-[16px] px-3.5 cursor-pointer border-0"
+            title="Open Bilingual Voice AI Copilot (Telugu / English)"
+          >
+            <Volume2 size={16} /> Voice Copilot
+          </button>
           <Link to={`/patients/${patient.id}/pregnancy`} className="btn btn-primary max-sm:flex-1 h-[40px] max-sm:h-[48px] max-sm:text-[16px]">Track Pregnancy</Link>
           <Link to={`/patients/${patient.id}/reports?upload=true`} className="btn btn-outline border-ink-200 h-[40px] max-sm:h-[48px] max-sm:flex-1 max-sm:text-[16px]">Upload Report</Link>
         </div>
@@ -247,6 +256,11 @@ const PatientProfile = () => {
           </div>
         </div>
       </div>
+      <JanmaLinkAIAssistant 
+        isOpen={showCopilot} 
+        onClose={() => setShowCopilot(false)} 
+        patientContext={patient} 
+      />
     </div>
   );
 };

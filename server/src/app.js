@@ -14,6 +14,7 @@ import invoiceRoutes from './routes/invoiceRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import hospitalRoutes from './routes/hospitalRoutes.js';
+import ragRoutes from './routes/ragRoutes.js';
 import errorHandler from './middleware/errorMiddleware.js';
 
 dotenv.config();
@@ -42,6 +43,7 @@ app.use('/api/v1/invoices', invoiceRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/uploads', uploadRoutes);
 app.use('/api/v1/hospitals', hospitalRoutes);
+app.use('/api/v1/rag', ragRoutes);
 app.use(errorHandler);
 
 export default app;

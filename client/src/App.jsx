@@ -38,6 +38,7 @@ import AdminPanel from './pages/AdminPanel';
 import SuperAdminPanel from './pages/SuperAdminPanel';
 import SuperAdminLogs from './pages/SuperAdminLogs';
 import SuperAdminOfferings from './pages/SuperAdminOfferings';
+import JanmaLinkAIAssistant from './components/JanmaLinkAIAssistant';
 
 // All staff roles
 const ALL_STAFF = ['superadmin', 'admin', 'receptionist', 'doctor', 'nurse', 'lab', 'pharmacy'];
@@ -52,6 +53,7 @@ function App() {
           <Route path="/book" element={<BookConsultation />} />
           <Route path="/login" element={<Login />} />
           <Route path="/hospital-register" element={<HospitalRegister />} />
+          <Route path="/register" element={<HospitalRegister />} />
 
           {/* ── Guardian (Mother/Patient) Portal ── */}
           <Route path="/portal" element={<GuardianPortal />} />
@@ -268,6 +270,7 @@ function App() {
           {/* Catch-all: 404 → landing */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        <JanmaLinkAIAssistant />
       </BrowserRouter>
     </AuthProvider>
   );
