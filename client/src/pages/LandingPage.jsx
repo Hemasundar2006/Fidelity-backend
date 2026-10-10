@@ -14,11 +14,27 @@ import { API_BASE } from '../config';
 const LandingPage = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [stats, setStats] = useState(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/dashboard/stats`);
+        const data = await res.json();
+        if (data.success && data.data) {
+          setStats(data.data);
+        }
+      } catch (err) {
+        console.warn('Landing page stats error:', err);
+      }
+    };
+    loadStats();
   }, []);
 
 
@@ -112,28 +128,74 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ─── SECTION 2: METRICS / TRUST ─── */}
-      <section className="py-12 border-y border-slate-100 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-center gap-12 md:gap-32 opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
-          <div className="flex items-center gap-3">
-            <Activity className="text-blue-600" size={32} />
-            <div>
-              <div className="text-2xl font-black text-slate-900">10k+</div>
-              <div className="text-sm font-bold text-slate-500 uppercase tracking-widest">Deliveries Monitored</div>
-            </div>
+      {/* ─── SECTION 2: REAL LIVE PLATFORM METRICS ─── */}
+      <section className="py-12 border-y border-slate-100 bg-slate-50 relative">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              Live Clinical Network Statistics
+            </span>
           </div>
-          <div className="flex items-center gap-3">
-            <ShieldCheck className="text-emerald-600" size={32} />
-            <div>
-              <div className="text-2xl font-black text-slate-900">99.9%</div>
-              <div className="text-sm font-bold text-slate-500 uppercase tracking-widest">System Uptime</div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-10">
+            <div className="flex items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                <Activity size={24} />
+              </div>
+              <div>
+                <div className="text-2xl sm:text-3xl font-black text-slate-900 leading-none">
+                  {stats?.totalPatients !== undefined ? stats.totalPatients : '4'}
+                </div>
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1.5">
+                  Mothers Registered
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Stethoscope className="text-pink-600" size={32} />
-            <div>
-              <div className="text-2xl font-black text-slate-900">50+</div>
-              <div className="text-sm font-bold text-slate-500 uppercase tracking-widest">Partner Hospitals</div>
+
+            <div className="flex items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center shrink-0">
+                <HeartPulse size={24} />
+              </div>
+              <div>
+                <div className="text-2xl sm:text-3xl font-black text-slate-900 leading-none">
+                  {stats ? (stats.activePregnancies + stats.deliveriesCount) : '4'}
+                </div>
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1.5">
+                  Pregnancies & Care Plans
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                <Calendar size={24} />
+              </div>
+              <div>
+                <div className="text-2xl sm:text-3xl font-black text-slate-900 leading-none">
+                  {stats?.totalAppointments !== undefined ? stats.totalAppointments : '4'}
+                </div>
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1.5">
+                  Clinical Consultations
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <Stethoscope size={24} />
+              </div>
+              <div>
+                <div className="text-2xl sm:text-3xl font-black text-slate-900 leading-none">
+                  {stats?.partnerHospitalsCount !== undefined ? stats.partnerHospitalsCount : '2'}
+                </div>
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1.5">
+                  Partner Hospitals
+                </div>
+              </div>
             </div>
           </div>
         </div>

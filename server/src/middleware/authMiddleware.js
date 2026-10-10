@@ -52,29 +52,61 @@ export const authorize = (...roles) => {
   };
 };
 
+export const optionalProtect = asyncHandler(async (req, res, next) => {
+  let token;
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+
+  if (!token) {
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = await User.findById(decoded.userId).select('-passwordHash');
+    if (req.user && !req.user.hospitalRef && req.user.role !== 'superadmin') {
+      const hosp = await Hospital.findOne({ adminRef: req.user._id });
+      if (hosp) {
+        req.user.hospitalRef = hosp._id;
+      }
+    }
+  } catch (err) {
+    // proceed unauthenticated
+  }
+  next();
+});
+
 export const checkConsent = (type) => asyncHandler(async (req, res, next) => {
-  if (['admin', 'doctor', 'nurse', 'receptionist'].includes(req.user.role)) {
-    // Treating staff passes if they have treatment consent, we can be more strict if needed
-    // Let's check patient's consent
+  if (!req.user) return next();
+
+  if (['superadmin', 'admin', 'doctor', 'nurse', 'lab', 'receptionist'].includes(req.user.role)) {
+    return next();
   }
 
   const patientId = req.params.id || req.body.patient;
   if (!patientId) return next();
 
+  // Allow patient to access their own records
+  if (req.user.role === 'patient') {
+    if (req.user.patientRef && req.user.patientRef.toString() === patientId.toString()) {
+      return next();
+    }
+  }
+
   const patient = await Patient.findById(patientId);
   if (!patient) return next(new AppError('Patient not found', 404, 'NOT_FOUND'));
 
-  const consent = patient.consents.find(c => c.type === type && c.granted);
-  if (!consent && !['admin'].includes(req.user.role)) {
-    // Exception for own access?
+  const consent = patient.consents?.find(c => c.type === type && c.granted);
+  if (!consent) {
     if (req.user.role === 'patient' && req.user.patientRef && req.user.patientRef.toString() === patient._id.toString()) {
       return next();
     }
-    // Doctors need treatment consent, ML needs ml_usage, etc.
-    if (type === 'ml_usage' && !consent) return next(new AppError('ML usage consent required', 403, 'CONSENT_REQUIRED'));
-    if (type === 'treatment' && !consent) return next(new AppError('Treatment consent required', 403, 'CONSENT_REQUIRED'));
-    if (type === 'data_sharing' && !consent) return next(new AppError('Data sharing consent required', 403, 'CONSENT_REQUIRED'));
+    if (type === 'ml_usage') return next(new AppError('ML usage consent required', 403, 'CONSENT_REQUIRED'));
+    if (type === 'treatment') return next(new AppError('Treatment consent required', 403, 'CONSENT_REQUIRED'));
+    if (type === 'data_sharing') return next(new AppError('Data sharing consent required', 403, 'CONSENT_REQUIRED'));
   }
   
   next();
 });
+

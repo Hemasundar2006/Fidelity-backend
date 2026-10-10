@@ -152,6 +152,14 @@ function App() {
               }
             />
             <Route
+              path="/patients/:id/risk-analyzer"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'doctor', 'nurse', 'superadmin']}>
+                  <MaternalHealthPredictor />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/patients/:id/pregnancy"
               element={
                 <ProtectedRoute allowedRoles={['admin', 'doctor', 'nurse']}>

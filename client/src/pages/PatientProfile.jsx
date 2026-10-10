@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Calendar, FileText, Baby, Activity, AlertCircle, Loader } from 'lucide-react';
+import { Calendar, FileText, Baby, Activity, AlertCircle, Loader, UploadCloud, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE } from '../config';
 
@@ -9,15 +9,40 @@ const PatientProfile = () => {
   const { authHeader } = useAuth();
   
   const [patientData, setPatientData] = useState(null);
+  const [timelineEvents, setTimelineEvents] = useState([]);
+  const [summaryBullets, setSummaryBullets] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchPatient = async () => {
+    const fetchPatientData = async () => {
       try {
-        const res = await fetch(`${API_BASE}/patients/${id}`, { headers: authHeader() });
-        const data = await res.json();
-        if (data.success) {
-          setPatientData(data.data);
+        const [patRes, timeRes, sumRes] = await Promise.all([
+          fetch(`${API_BASE}/patients/${id}`, { headers: authHeader() }),
+          fetch(`${API_BASE}/patients/${id}/timeline`, { headers: authHeader() }).catch(() => null),
+          fetch(`${API_BASE}/patients/${id}/summary`, { headers: authHeader() }).catch(() => null)
+        ]);
+
+        const patData = await patRes.json();
+        if (patData.success) {
+          setPatientData(patData.data);
+        }
+
+        if (timeRes && timeRes.ok) {
+          const timeData = await timeRes.json();
+          if (timeData.success && Array.isArray(timeData.data) && timeData.data.length > 0) {
+            setTimelineEvents(timeData.data.map(t => ({
+              ...t,
+              icon: t.type === 'report' ? FileText : t.type === 'delivery' || t.type === 'pregnancy' ? Baby : Activity,
+              dotBg: t.type === 'report' ? 'bg-amber-600' : t.type === 'delivery' || t.type === 'pregnancy' ? 'bg-pink-500' : 'bg-blue-600'
+            })));
+          }
+        }
+
+        if (sumRes && sumRes.ok) {
+          const sumData = await sumRes.json();
+          if (sumData.success && Array.isArray(sumData.data?.bullets) && sumData.data.bullets.length > 0) {
+            setSummaryBullets(sumData.data.bullets);
+          }
         }
       } catch (err) {
         console.error("Failed to fetch patient:", err);
@@ -25,12 +50,8 @@ const PatientProfile = () => {
         setLoading(false);
       }
     };
-    if (id) fetchPatient();
+    if (id) fetchPatientData();
   }, [id, authHeader]);
-  
-  if (loading) {
-    return <div className="flex justify-center p-12"><Loader className="animate-spin text-blue-500" size={32} /></div>;
-  }
 
   const patient = patientData ? {
     id: patientData._id,
@@ -38,6 +59,7 @@ const PatientProfile = () => {
     name: patientData.name,
     phone: patientData.phone,
     age: patientData.dob ? Math.floor((new Date() - new Date(patientData.dob).getTime()) / 3.15576e+10) : 30,
+    gender: patientData.gender || 'Female',
     bloodGroup: patientData.bloodGroup || 'Unknown',
     allergies: patientData.medicalHistory?.allergies || [],
     pregnancyStatus: 'Active'
@@ -46,18 +68,24 @@ const PatientProfile = () => {
     motherId: 'Unknown',
     name: 'Unknown Patient',
     age: 0,
+    gender: 'Female',
     phone: '',
     bloodGroup: 'Unknown',
     allergies: [],
     pregnancyStatus: 'Unknown'
   };
 
-  const timelineEvents = [
+  // Fallback defaults if no events
+  const displayTimeline = timelineEvents.length > 0 ? timelineEvents : [
     { type: 'visit', date: '2026-09-28', title: 'Antenatal Visit', summary: 'BP 150/98, Hb 9.8. High risk detected.', icon: Activity, dotBg: 'bg-red-600' },
     { type: 'report', date: '2026-09-20', title: 'Lab Report: Blood Panel', summary: 'Low Hemoglobin flagged.', icon: FileText, dotBg: 'bg-amber-600' },
     { type: 'pregnancy', date: '2026-07-01', title: 'Pregnancy Registered', summary: 'EDD: 2027-04-07', icon: Baby, dotBg: 'bg-pink-500' },
     { type: 'visit', date: '2026-06-15', title: 'General Consultation', summary: 'Pre-conception checkup.', icon: Calendar, dotBg: 'bg-blue-600' }
   ];
+
+  if (loading) {
+    return <div className="flex justify-center p-12"><Loader className="animate-spin text-blue-500" size={32} /></div>;
+  }
 
   return (
     <div className="pb-8 max-sm:pb-24 max-w-5xl mx-auto min-w-0">
@@ -82,9 +110,16 @@ const PatientProfile = () => {
           </div>
         </div>
 
-        <div className="flex max-sm:w-full flex-wrap gap-3 shrink-0">
+        <div className="flex max-sm:w-full flex-wrap gap-2.5 shrink-0">
+          <Link 
+            to={`/patients/${patient.id}/risk-analyzer`} 
+            className="btn bg-rose-600 hover:bg-rose-700 text-white font-semibold flex items-center gap-1.5 shadow-sm max-sm:flex-1 h-[40px] max-sm:h-[48px] max-sm:text-[16px] px-3.5"
+            title="Open Dedicated Person Risk Analyzer"
+          >
+            <ShieldAlert size={16} /> AI Risk Analyzer
+          </Link>
           <Link to={`/patients/${patient.id}/pregnancy`} className="btn btn-primary max-sm:flex-1 h-[40px] max-sm:h-[48px] max-sm:text-[16px]">Track Pregnancy</Link>
-          <Link to={`/patients/${patient.id}/reports`} className="btn btn-outline border-ink-200 h-[40px] max-sm:h-[48px] max-sm:flex-1 max-sm:text-[16px]">Upload Report</Link>
+          <Link to={`/patients/${patient.id}/reports?upload=true`} className="btn btn-outline border-ink-200 h-[40px] max-sm:h-[48px] max-sm:flex-1 max-sm:text-[16px]">Upload Report</Link>
         </div>
       </div>
 
@@ -96,7 +131,7 @@ const PatientProfile = () => {
             <h2 className="text-[16px] leading-[24px] font-semibold text-blue-800 m-0 mb-6 max-sm:mb-4">Patient Longitudinal Timeline</h2>
             
             <div className="flex flex-col gap-6 max-sm:gap-4 flex-1">
-              {timelineEvents.map((event, i) => (
+              {displayTimeline.map((event, i) => (
                 <div key={i} className="flex gap-4">
                   <div className="w-20 shrink-0 text-right pt-0.5">
                     <span className="block text-[14px] leading-[22px] font-semibold text-ink-900">
@@ -136,9 +171,17 @@ const PatientProfile = () => {
               <span className="text-[12px] text-ink-400">Updated Today</span>
             </div>
             <ul className="text-[13px] leading-[20px] text-ink-600 space-y-2.5 pl-4 list-disc m-0">
-              <li>Patient has a history of high BP (150/98 on Sep 28) with ongoing monitoring.</li>
-              <li>Hemoglobin is low (9.8 g/dL), indicates mild anemia; prescribed iron supplementation.</li>
-              <li>Current gestation: Week 12. FHR verified normal.</li>
+              {summaryBullets.length > 0 ? (
+                summaryBullets.map((b, idx) => (
+                  <li key={idx}>{b.text || b}</li>
+                ))
+              ) : (
+                <>
+                  <li>Patient has a history of high BP (150/98 on Sep 28) with ongoing monitoring.</li>
+                  <li>Hemoglobin is low (9.8 g/dL), indicates mild anemia; prescribed iron supplementation.</li>
+                  <li>Current gestation: Week 12. FHR verified normal.</li>
+                </>
+              )}
             </ul>
           </div>
 
@@ -191,45 +234,16 @@ const PatientProfile = () => {
               <button type="submit" className="btn btn-primary h-[34px] text-[12px] w-full">Share Precaution</button>
             </form>
 
-            <form onSubmit={async (e) => {
-              e.preventDefault();
-              const title = e.target.docTitle.value;
-              const type = e.target.docType.value;
-              if (title) {
-                try {
-                  const res = await fetch(`${API_BASE}/patients/${id}/reports`, {
-                    method: 'POST',
-                    headers: authHeader(),
-                    body: JSON.stringify({
-                      testType: title,
-                      category: type.toLowerCase(),
-                      reportedAt: new Date().toISOString()
-                    })
-                  });
-                  if (res.ok) {
-                    e.target.reset();
-                    alert('Document uploaded to Patient Portal!');
-                  } else {
-                    const err = await res.json();
-                    alert('Error uploading document: ' + err.message);
-                  }
-                } catch (err) {
-                  alert('Error: ' + err.message);
-                }
-              }
-            }}>
-              <label className="text-[12px] font-semibold text-ink-900 block mb-1">Upload Diagnostic Report</label>
-              <input type="text" name="docTitle" className="input text-[13px] h-[38px] mb-2" placeholder="Document Title (e.g. TIFFA Scan)" required />
-              <select name="docType" className="input text-[13px] h-[38px] mb-2">
-                <option value="scan">Imaging (Ultrasound/Scan)</option>
-                <option value="blood">Pathology (Blood/Urine)</option>
-                <option value="other">Other</option>
-              </select>
-              <div className="border-2 border-dashed border-ink-200 rounded-xl p-4 text-center mb-2">
-                <span className="text-[11px] text-ink-500">Click or drag PDF file here</span>
-              </div>
-              <button type="submit" className="btn btn-secondary h-[34px] text-[12px] w-full bg-blue-50 text-blue-700">Upload to Portal</button>
-            </form>
+            <div className="border border-blue-100 bg-blue-50/50 rounded-xl p-4 text-center">
+              <label className="text-[12px] font-bold text-blue-900 block mb-1">Upload Diagnostic Record</label>
+              <p className="text-[11px] text-ink-600 mb-3">Scan lab report with AI OCR or generate official PDF with dynamic templates</p>
+              <Link 
+                to={`/patients/${patient.id}/reports?upload=true`} 
+                className="btn btn-primary h-[36px] text-[12px] w-full flex items-center justify-center gap-1.5"
+              >
+                <UploadCloud size={15} /> Open OCR Report Scanner
+              </Link>
+            </div>
           </div>
         </div>
       </div>

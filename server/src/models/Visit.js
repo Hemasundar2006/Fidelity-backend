@@ -13,7 +13,16 @@ const visitSchema = new mongoose.Schema({
     pulse: Number,
     tempC: Number,
     weightKg: Number,
-    spo2: Number
+    spo2: Number,
+    hb: Number,
+    bloodSugar: Number,
+    fhr: Number,
+    weeks: Number
+  },
+  riskAssessment: {
+    riskLevel: { type: String, enum: ['low', 'mid', 'high'] },
+    confidence: Number,
+    factors: [String]
   },
   diagnosis: [String],
   notes: String,

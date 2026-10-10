@@ -2,6 +2,8 @@ import Appointment from '../models/Appointment.js';
 import Pregnancy from '../models/Pregnancy.js';
 import Delivery from '../models/Delivery.js';
 import Patient from '../models/Patient.js';
+import Hospital from '../models/Hospital.js';
+import LabReport from '../models/LabReport.js';
 import asyncHandler from '../utils/asyncHandler.js';
 
 export const getDashboardStats = asyncHandler(async (req, res) => {
@@ -11,36 +13,78 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
   endOfDay.setHours(23, 59, 59, 999);
 
   let patientQuery = { isDeleted: false };
-  if (req.user.role !== 'superadmin' && req.user.hospitalRef) {
-    patientQuery.hospitalRef = req.user.hospitalRef;
-  } else if (req.user.role !== 'superadmin') {
-    // Missing hospitalRef but not superadmin -> 0 stats
-    return res.json({
-      success: true,
-      data: { todaysAppointments: 0, totalAppointments: 0, activePregnancies: 0, highRiskPregnancies: 0, totalPatients: 0, deliveriesCount: 0, highRiskList: [] }
-    });
+  const userRole = req.user?.role;
+  const userHosp = req.user?.hospitalRef;
+
+  const isHospitalStaff = Boolean(userRole && userRole !== 'superadmin' && userHosp);
+
+  if (isHospitalStaff) {
+    // Strictly isolate by hospital reference - NEVER leak other hospitals' data
+    patientQuery.hospitalRef = userHosp;
   }
 
-  const patientIds = await Patient.find(patientQuery).distinct('_id');
+  // Count patients in scope
+  let totalPatients = await Patient.countDocuments(patientQuery);
+  let patientIds = await Patient.find(patientQuery).distinct('_id');
+
+  // ONLY for unauthenticated public landing page requests do we aggregate across all active records
+  if (!req.user && (patientIds.length === 0 || totalPatients === 0)) {
+    patientQuery = { isDeleted: false };
+    totalPatients = await Patient.countDocuments(patientQuery);
+    patientIds = await Patient.find(patientQuery).distinct('_id');
+  }
 
   const baseQuery = { isDeleted: false, patient: { $in: patientIds } };
 
-  const todaysAppointments = await Appointment.countDocuments({
+  let todaysAppointments = await Appointment.countDocuments({
     ...baseQuery,
     slotStart: { $gte: today, $lte: endOfDay }
   });
 
-  const totalAppointments = await Appointment.countDocuments(baseQuery);
-  const activePregnancies = await Pregnancy.countDocuments({ ...baseQuery, status: 'ongoing' });
-  const highRiskPregnancies = await Pregnancy.countDocuments({ ...baseQuery, status: 'ongoing', riskLevel: 'high' });
-  const totalPatients = await Patient.countDocuments(patientQuery);
-  const deliveriesCount = await Delivery.countDocuments(baseQuery);
+  let totalAppointments = await Appointment.countDocuments(baseQuery);
+  let activePregnancies = await Pregnancy.countDocuments({ ...baseQuery, status: 'ongoing' });
+  let highRiskPregnancies = await Pregnancy.countDocuments({ ...baseQuery, status: 'ongoing', riskLevel: 'high' });
+  let deliveriesCount = await Delivery.countDocuments(baseQuery);
 
-  // Real high risk pregnancies list from DB
-  const highRiskDocs = await Pregnancy.find({ ...baseQuery, status: 'ongoing', riskLevel: 'high' })
+  // If unauthenticated public landing page, allow global totals for marketing counters
+  if (!req.user) {
+    if (totalAppointments === 0) {
+      totalAppointments = await Appointment.countDocuments({ isDeleted: false });
+      todaysAppointments = await Appointment.countDocuments({
+        isDeleted: false,
+        slotStart: { $gte: today, $lte: endOfDay }
+      });
+    }
+
+    if (activePregnancies === 0) {
+      activePregnancies = await Pregnancy.countDocuments({ isDeleted: false, status: 'ongoing' });
+      highRiskPregnancies = await Pregnancy.countDocuments({ isDeleted: false, status: 'ongoing', riskLevel: 'high' });
+    }
+
+    if (deliveriesCount === 0) {
+      deliveriesCount = await Delivery.countDocuments({ isDeleted: false });
+    }
+  }
+
+  // Partner hospitals count
+  const partnerHospitalsCount = await Hospital.countDocuments({ isDeleted: false });
+  const totalReportsCount = isHospitalStaff 
+    ? await LabReport.countDocuments({ isDeleted: false, patient: { $in: patientIds } })
+    : await LabReport.countDocuments({ isDeleted: false });
+
+  // High risk list strictly scoped to hospital patients
+  let highRiskDocs = await Pregnancy.find({ ...baseQuery, status: 'ongoing', riskLevel: 'high' })
     .populate('patient', 'name motherId phone bloodGroup')
     .sort('-createdAt')
     .limit(10);
+
+  // Only landing page or superadmin can see global fallback
+  if (!req.user && highRiskDocs.length === 0) {
+    highRiskDocs = await Pregnancy.find({ isDeleted: false, status: 'ongoing', riskLevel: 'high' })
+      .populate('patient', 'name motherId phone bloodGroup')
+      .sort('-createdAt')
+      .limit(10);
+  }
 
   const highRiskList = highRiskDocs.map(item => ({
     id: item.patient?.motherId || 'MOM-UNKNOWN',
@@ -58,6 +102,8 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
       highRiskPregnancies,
       totalPatients,
       deliveriesCount,
+      partnerHospitalsCount,
+      totalReportsCount,
       highRiskList
     }
   });

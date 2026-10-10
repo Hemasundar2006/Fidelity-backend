@@ -10,11 +10,21 @@ const labReportSchema = new mongoose.Schema({
   reportedAt: Date,
   results: [{
     parameter: String,
-    value: Number,
+    value: mongoose.Schema.Types.Mixed,
     unit: String,
     refRange: String,
-    flag: { type: String, enum: ['normal', 'low', 'high'] }
+    flag: { type: String, default: 'normal' }
   }],
+  templateName: String,
+  patientVitals: {
+    height: Number,
+    weight: Number,
+    bmi: Number,
+    bloodPressure: String
+  },
+  pdfUrl: String,
+  pdfBase64: String,
+  ocrRawText: String,
   files: [{
     publicId: String,
     url: String,

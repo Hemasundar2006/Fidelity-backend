@@ -113,13 +113,32 @@ export const getPatients = asyncHandler(async (req, res) => {
 });
 
 export const getPatientById = asyncHandler(async (req, res) => {
-  const patient = await Patient.findById(req.params.id);
+  const patient = await Patient.findById(req.params.id)
+    .populate('hospitalRef', 'hospitalName email mobile')
+    .populate('assignedDoctor', 'name email specialization');
   if (!patient) throw new AppError('Not found', 404);
-  res.json({ success: true, data: patient });
+
+  const patientObj = patient.toObject();
+  const ongoingPregnancy = await Pregnancy.findOne({ patient: req.params.id, status: 'ongoing' }).lean();
+  if (ongoingPregnancy) {
+    patientObj.ongoingPregnancy = ongoingPregnancy;
+    patientObj.riskLevel = ongoingPregnancy.riskLevel || patientObj.riskLevel || 'low';
+    patientObj.currentPregnancy = {
+      ...(patientObj.currentPregnancy || {}),
+      riskLevel: ongoingPregnancy.riskLevel || 'low',
+      edd: ongoingPregnancy.edd,
+      lmp: ongoingPregnancy.lmp,
+      antenatalVisits: ongoingPregnancy.antenatalVisits || []
+    };
+  }
+
+  res.json({ success: true, data: patientObj });
 });
 
 export const updatePatient = asyncHandler(async (req, res) => {
-  const patient = await Patient.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  const patient = await Patient.findByIdAndUpdate(req.params.id, req.body, { new: true })
+    .populate('hospitalRef', 'hospitalName email mobile')
+    .populate('assignedDoctor', 'name email specialization');
   res.json({ success: true, data: patient });
 });
 
@@ -177,7 +196,73 @@ export const removeConsent = asyncHandler(async (req, res) => {
 });
 
 export const addVisit = asyncHandler(async (req, res) => {
-  const visit = await Visit.create({ ...req.body, patient: req.params.id, doctor: req.user._id });
+  const { vitals, notes, followUpDate, riskLevel, riskFactors, visitDate, weeks } = req.body;
+  
+  const visit = await Visit.create({
+    ...req.body,
+    patient: req.params.id,
+    doctor: req.user?._id,
+    visitDate: visitDate || new Date()
+  });
+
+  // Synchronize with active Pregnancy record
+  try {
+    let pregnancy = await Pregnancy.findOne({ patient: req.params.id, status: 'ongoing' });
+    if (!pregnancy) {
+      // Create initial pregnancy tracker if not present
+      const edd = new Date();
+      edd.setDate(edd.getDate() + (40 - (weeks || 12)) * 7);
+      const lmp = new Date();
+      lmp.setDate(lmp.getDate() - (weeks || 12) * 7);
+      pregnancy = new Pregnancy({
+        patient: req.params.id,
+        pregnancyNo: 1,
+        lmp,
+        edd,
+        status: 'ongoing',
+        createdBy: req.user?._id
+      });
+    }
+
+    if (riskLevel) pregnancy.riskLevel = riskLevel;
+    if (Array.isArray(riskFactors) && riskFactors.length > 0) {
+      pregnancy.riskFactors = riskFactors;
+    }
+
+    // Append antenatal visit record
+    pregnancy.antenatalVisits.push({
+      visitDate: visitDate || new Date(),
+      gestationWeeks: weeks || vitals?.weeks || 12,
+      bpSys: vitals?.bpSys,
+      bpDia: vitals?.bpDia,
+      weightKg: vitals?.weightKg,
+      hb: vitals?.hb,
+      bloodSugar: vitals?.bloodSugar,
+      fetalHeartRate: vitals?.fhr,
+      scanNotes: notes,
+      doctor: req.user?._id,
+      nextVisit: followUpDate
+    });
+
+    await pregnancy.save();
+
+    // Update Patient model top-level risk level and current pregnancy status
+    await Patient.findByIdAndUpdate(req.params.id, {
+      ...(riskLevel ? { riskLevel } : {}),
+      ...(followUpDate ? { nextVisitDate: followUpDate } : {}),
+      'currentPregnancy.riskLevel': riskLevel || 'low',
+      'currentPregnancy.gestationWeeks': weeks || vitals?.weeks || 12,
+      'currentPregnancy.edd': pregnancy.edd,
+      'currentPregnancy.lastVisitDate': visitDate || new Date(),
+      'vitals.bpSys': vitals?.bpSys,
+      'vitals.bpDia': vitals?.bpDia,
+      'vitals.weightKg': vitals?.weightKg,
+      'vitals.hb': vitals?.hb
+    });
+  } catch (syncErr) {
+    console.warn('Failed to sync pregnancy visit:', syncErr.message);
+  }
+
   res.status(201).json({ success: true, data: visit });
 });
 
@@ -208,24 +293,38 @@ export const addReport = asyncHandler(async (req, res) => {
   // auto-set flags based on refRange
   const results = req.body.results || [];
   results.forEach(r => {
-    if (r.refRange && r.value) {
-      const parts = r.refRange.split('-');
-      if (parts.length === 2) {
-        const min = parseFloat(parts[0]);
-        const max = parseFloat(parts[1]);
-        if (!isNaN(min) && !isNaN(max)) {
-          if (r.value < min) r.flag = 'low';
-          else if (r.value > max) r.flag = 'high';
-          else r.flag = 'normal';
+    if (r.refRange && r.value !== undefined && r.value !== null && r.value !== '') {
+      const num = parseFloat(r.value);
+      if (!isNaN(num)) {
+        const parts = String(r.refRange).split('-');
+        if (parts.length === 2) {
+          const min = parseFloat(parts[0]);
+          const max = parseFloat(parts[1]);
+          if (!isNaN(min) && !isNaN(max)) {
+            if (num < min) r.flag = 'low';
+            else if (num > max) r.flag = 'high';
+            else r.flag = 'normal';
+          }
         }
+      } else if (!r.flag) {
+        r.flag = 'normal';
       }
+    } else if (!r.flag) {
+      r.flag = 'normal';
     }
   });
 
-  const report = new LabReport({ ...req.body, results, patient: req.params.id, orderedBy: req.user._id });
+  const report = new LabReport({
+    ...req.body,
+    results,
+    patient: req.params.id,
+    orderedBy: req.user?._id || req.body.orderedBy,
+    createdBy: req.user?._id,
+    reportedAt: req.body.reportedAt || new Date(),
+    collectedAt: req.body.collectedAt || new Date()
+  });
   await report.save();
 
-  // Call checkDuplicate again to attach warning in response if needed (but API spec says just return it or add to response)
   res.status(201).json({ success: true, data: report });
 });
 
@@ -234,7 +333,9 @@ export const getReports = asyncHandler(async (req, res) => {
   const query = { patient: req.params.id, isDeleted: false };
   if (category) query.category = category;
   
-  const reports = await LabReport.find(query).sort('-reportedAt');
+  const reports = await LabReport.find(query)
+    .populate('orderedBy', 'name email role')
+    .sort('-reportedAt');
   res.json({ success: true, data: reports });
 });
 

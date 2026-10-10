@@ -9,6 +9,8 @@ const patientSchema = new mongoose.Schema({
   email: { type: String },
   abhaId: { type: String },
   bloodGroup: { type: String, enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] },
+  height: { type: Number }, // in cm
+  weight: { type: Number }, // in kg
   address: {
     line1: String, city: String, state: String, pincode: String
   },
@@ -28,6 +30,22 @@ const patientSchema = new mongoose.Schema({
     medications: [String]
   },
   status: { type: String, enum: ['active', 'inactive'], default: 'active' },
+  riskLevel: { type: String, enum: ['low', 'mid', 'high'], default: 'low' },
+  nextVisitDate: { type: Date },
+  vitals: {
+    bpSys: Number,
+    bpDia: Number,
+    weightKg: Number,
+    hb: Number,
+    bloodSugar: Number,
+    fhr: Number
+  },
+  currentPregnancy: {
+    riskLevel: { type: String, enum: ['low', 'mid', 'high'], default: 'low' },
+    gestationWeeks: Number,
+    edd: Date,
+    lastVisitDate: Date
+  },
   consents: [{
     type: { type: String, enum: ['treatment', 'data_sharing', 'ml_usage', 'baby_data_access'] },
     granted: Boolean,

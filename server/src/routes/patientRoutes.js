@@ -20,7 +20,7 @@ router.route('/')
 
 router.route('/:id')
   .get(protect, checkConsent('treatment'), auditMiddleware('read', 'Patient'), getPatientById)
-  .patch(protect, authorize('admin', 'receptionist'), auditMiddleware('update', 'Patient'), updatePatient);
+  .patch(protect, authorize('superadmin', 'admin', 'receptionist', 'doctor', 'nurse', 'lab'), auditMiddleware('update', 'Patient'), updatePatient);
 
 router.get('/:id/timeline', protect, checkConsent('treatment'), auditMiddleware('read', 'PatientTimeline'), getPatientTimeline);
 router.get('/:id/summary', protect, checkConsent('ml_usage'), auditMiddleware('read', 'PatientSummary'), getPatientSummary);
@@ -32,9 +32,9 @@ router.delete('/:id/consents/:consentId', protect, authorize('admin', 'reception
 router.post('/:id/visits', protect, authorize('admin', 'doctor', 'nurse'), auditMiddleware('create', 'Visit'), addVisit);
 router.get('/:id/visits', protect, checkConsent('treatment'), auditMiddleware('read', 'Visit'), getVisits);
 
-router.post('/:id/reports', protect, authorize('admin', 'doctor', 'nurse', 'lab'), auditMiddleware('create', 'LabReport'), addReport);
+router.post('/:id/reports', protect, authorize('superadmin', 'admin', 'doctor', 'nurse', 'lab', 'receptionist'), auditMiddleware('create', 'LabReport'), addReport);
 router.get('/:id/reports', protect, checkConsent('treatment'), auditMiddleware('read', 'LabReport'), getReports);
-router.get('/:id/reports/check', protect, authorize('doctor', 'lab'), checkDuplicateTest);
+router.get('/:id/reports/check', protect, authorize('superadmin', 'admin', 'doctor', 'nurse', 'lab', 'receptionist'), checkDuplicateTest);
 
 router.post('/:id/pregnancies', protect, authorize('doctor'), auditMiddleware('create', 'Pregnancy'), addPregnancy);
 
