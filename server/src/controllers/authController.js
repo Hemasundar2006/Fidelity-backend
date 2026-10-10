@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import Hospital from '../models/Hospital.js';
 import AppError from '../utils/AppError.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import jwt from 'jsonwebtoken';
@@ -43,6 +44,7 @@ export const login = asyncHandler(async (req, res, next) => {
       email: user.email,
       role: user.role,
       isApproved: user.isApproved,
+      hospitalRef: user.hospitalRef,
       accessToken
     }
   });
@@ -60,10 +62,29 @@ export const me = asyncHandler(async (req, res) => {
   res.json({ success: true, data: req.user });
 });
 
-export const registerUser = asyncHandler(async (req, res) => {
+export const registerUser = asyncHandler(async (req, res, next) => {
   const { name, email, password, role } = req.body;
+  if (!name || !email || !password || !role) {
+    return next(new AppError('Please provide all required fields', 400, 'BAD_REQUEST'));
+  }
+
+  const existing = await User.findOne({ email });
+  if (existing) {
+    return next(new AppError('User with this email already exists', 400, 'BAD_REQUEST'));
+  }
+
   const passwordHash = await bcrypt.hash(password, 10);
   
+  let hospitalId = req.user.hospitalRef;
+  if (!hospitalId && req.user.role !== 'superadmin') {
+    const hosp = await Hospital.findOne({ adminRef: req.user._id });
+    if (hosp) {
+      hospitalId = hosp._id;
+      req.user.hospitalRef = hosp._id;
+      await User.findByIdAndUpdate(req.user._id, { hospitalRef: hosp._id });
+    }
+  }
+
   // The creator (admin) is req.user
   const user = await User.create({ 
     name, 
@@ -71,22 +92,41 @@ export const registerUser = asyncHandler(async (req, res) => {
     passwordHash, 
     role,
     createdBy: req.user._id,
-    hospitalRef: req.user.hospitalRef 
+    hospitalRef: hospitalId,
+    isActive: true,
+    isApproved: true
   });
   
   res.status(201).json({ success: true, data: { _id: user._id, name, email, role } });
 });
 
 export const getAllUsers = asyncHandler(async (req, res) => {
-  // If superadmin, they might want to see all users, otherwise restrict to hospital
+  // If superadmin, they can see all users, otherwise restrict to hospital
   const filter = { isDeleted: false };
   if (req.user.role !== 'superadmin') {
-    if (req.user.hospitalRef) {
-      filter.hospitalRef = req.user.hospitalRef;
-    } else {
-      // Strict isolation: if a non-superadmin is missing a hospitalRef, return empty array to prevent data leak.
-      return res.json({ success: true, data: [] });
+    let hospitalId = req.user.hospitalRef;
+    if (!hospitalId) {
+      const hosp = await Hospital.findOne({ adminRef: req.user._id });
+      if (hosp) {
+        hospitalId = hosp._id;
+        req.user.hospitalRef = hosp._id;
+        await User.findByIdAndUpdate(req.user._id, { hospitalRef: hosp._id });
+      }
     }
+
+    const emailDomain = req.user.email && req.user.email.includes('@')
+      ? req.user.email.split('@')[1]
+      : null;
+
+    const orConditions = [{ createdBy: req.user._id }];
+    if (hospitalId) {
+      orConditions.push({ hospitalRef: hospitalId });
+    }
+    if (emailDomain && !['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com'].includes(emailDomain.toLowerCase())) {
+      orConditions.push({ email: new RegExp('@' + emailDomain + '$', 'i') });
+    }
+
+    filter.$or = orConditions;
   }
   
   const users = await User.find(filter).select('-passwordHash');

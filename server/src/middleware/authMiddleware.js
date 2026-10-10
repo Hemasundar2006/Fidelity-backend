@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import Hospital from '../models/Hospital.js';
 import Patient from '../models/Patient.js';
 import AppError from '../utils/AppError.js';
 import asyncHandler from '../utils/asyncHandler.js';
@@ -20,6 +21,22 @@ export const protect = asyncHandler(async (req, res, next) => {
     if (!req.user) {
       return next(new AppError('Not authorized, user not found', 401, 'UNAUTHORIZED'));
     }
+
+    // Auto-resolve hospitalRef if not set on user
+    if (!req.user.hospitalRef && req.user.role !== 'superadmin') {
+      const hosp = await Hospital.findOne({ adminRef: req.user._id });
+      if (hosp) {
+        req.user.hospitalRef = hosp._id;
+        await User.findByIdAndUpdate(req.user._id, { hospitalRef: hosp._id });
+      } else if (req.user.createdBy) {
+        const creator = await User.findById(req.user.createdBy);
+        if (creator && creator.hospitalRef) {
+          req.user.hospitalRef = creator.hospitalRef;
+          await User.findByIdAndUpdate(req.user._id, { hospitalRef: creator.hospitalRef });
+        }
+      }
+    }
+
     next();
   } catch (error) {
     return next(new AppError('Not authorized, token failed', 401, 'UNAUTHORIZED'));

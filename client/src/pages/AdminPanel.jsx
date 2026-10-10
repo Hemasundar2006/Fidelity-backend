@@ -102,6 +102,8 @@ const AdminPanel = () => {
         <button onClick={() => setActiveFilter('doctor')} className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${activeFilter === 'doctor' ? 'bg-[#76C0EC] text-white shadow-md shadow-[#76C0EC]/30' : 'bg-transparent text-[#76C0EC] hover:bg-[#f0f8fd]'}`}>Doctors</button>
         <button onClick={() => setActiveFilter('nurse')} className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${activeFilter === 'nurse' ? 'bg-[#76C0EC] text-white shadow-md shadow-[#76C0EC]/30' : 'bg-transparent text-[#76C0EC] hover:bg-[#f0f8fd]'}`}>Nurses</button>
         <button onClick={() => setActiveFilter('receptionist')} className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${activeFilter === 'receptionist' ? 'bg-[#76C0EC] text-white shadow-md shadow-[#76C0EC]/30' : 'bg-transparent text-[#76C0EC] hover:bg-[#f0f8fd]'}`}>Receptionists</button>
+        <button onClick={() => setActiveFilter('lab')} className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${activeFilter === 'lab' ? 'bg-[#76C0EC] text-white shadow-md shadow-[#76C0EC]/30' : 'bg-transparent text-[#76C0EC] hover:bg-[#f0f8fd]'}`}>Lab Technicians</button>
+        <button onClick={() => setActiveFilter('pharmacy')} className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${activeFilter === 'pharmacy' ? 'bg-[#76C0EC] text-white shadow-md shadow-[#76C0EC]/30' : 'bg-transparent text-[#76C0EC] hover:bg-[#f0f8fd]'}`}>Pharmacy</button>
         <button onClick={() => setActiveFilter('admin')} className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${activeFilter === 'admin' ? 'bg-[#76C0EC] text-white shadow-md shadow-[#76C0EC]/30' : 'bg-transparent text-[#76C0EC] hover:bg-[#f0f8fd]'}`}>Admins</button>
       </div>
 

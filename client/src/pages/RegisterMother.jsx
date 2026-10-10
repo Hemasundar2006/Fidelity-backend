@@ -66,10 +66,23 @@ const RegisterMother = () => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
+      const payload = {
+        ...formData,
+        partner: {
+          ...formData.partner,
+          dob: formData.partner?.dob || undefined,
+          bloodGroup: formData.partner?.bloodGroup || undefined
+        },
+        idProof: formData.idProof ? {
+          type: formData.idProof.type || 'aadhaar',
+          ...formData.idProof
+        } : null
+      };
+
       const res = await fetch(`${API_BASE}/patients`, {
         method: 'POST',
         headers: { ...authHeader(), 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
       
@@ -80,7 +93,9 @@ const RegisterMother = () => {
         });
         localStorage.removeItem('registerMotherDraft');
       } else {
-        alert(data.message || 'Registration failed');
+        const errorMsg = data.error?.message || data.message || 'Registration failed';
+        const details = Array.isArray(data.error?.details) ? data.error.details.map(d => `${d.field}: ${d.issue}`).join('\n') : '';
+        alert(details ? `${errorMsg}:\n${details}` : errorMsg);
       }
     } catch (err) {
       alert('Network error connecting to backend API');

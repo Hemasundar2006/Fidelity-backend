@@ -10,9 +10,9 @@ router.post('/patient/login', patientLogin);
 router.post('/logout', logout);
 router.get('/me', protect, me);
 
-// Example route for admin to create users
-router.post('/register', protect, authorize('admin'), registerUser);
+// Route for admin / superadmin to create users
+router.post('/register', protect, authorize('admin', 'superadmin'), registerUser);
 
-router.get('/users', protect, authorize('admin'), getAllUsers);
+router.get('/users', protect, authorize('admin', 'superadmin'), getAllUsers);
 
 export default router;

@@ -19,8 +19,48 @@ export const registerPatient = asyncHandler(async (req, res) => {
   const motherId = await generateId('MOM');
   const qr = await generateQR(motherId, `fidelity/patients/${motherId}`);
 
+  // Normalize consents if sent as object { treatment: true, data_sharing: true, ... }
+  let consents = req.body.consents;
+  if (consents && typeof consents === 'object' && !Array.isArray(consents)) {
+    consents = Object.entries(consents).map(([type, granted]) => ({
+      type,
+      granted: Boolean(granted),
+      grantedAt: new Date(),
+      method: 'in_person'
+    }));
+  }
+
+  // Normalize medicalHistory strings into arrays if strings were provided
+  let medicalHistory = { ...req.body.medicalHistory };
+  if (medicalHistory) {
+    ['allergies', 'conditions', 'surgeries', 'medications'].forEach(key => {
+      if (typeof medicalHistory[key] === 'string') {
+        medicalHistory[key] = medicalHistory[key]
+          ? medicalHistory[key].split(',').map(s => s.trim()).filter(Boolean)
+          : [];
+      }
+    });
+  }
+
+  // Normalize partner empty fields to prevent CastError on Date
+  let partner = { ...req.body.partner };
+  if (partner) {
+    if (!partner.dob) delete partner.dob;
+    if (!partner.bloodGroup) delete partner.bloodGroup;
+  }
+
+  // Normalize idProof
+  let idProof = req.body.idProof;
+  if (idProof && !idProof.type) {
+    idProof = { ...idProof, type: 'aadhaar' };
+  }
+
   const patient = await Patient.create({
     ...req.body,
+    consents,
+    medicalHistory,
+    partner,
+    idProof,
     motherId,
     qr,
     hospitalRef: req.user.hospitalRef,
