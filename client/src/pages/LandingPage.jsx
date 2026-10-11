@@ -7,13 +7,16 @@ import {
   Stethoscope, BarChart3, Lock, Zap,
   Calendar, Syringe, AlertTriangle, Users,
   Building2, Sparkles, Clock, Check, Star,
-  Award, Shield, Phone, ChevronRight, Sliders
+  Award, Shield, Phone, ChevronRight, Sliders, Globe
 } from 'lucide-react';
 import { API_BASE } from '../config';
 import { fetchDoctors } from '../services/api';
 import BookingModal from '../components/BookingModal';
+import { useLanguage } from '../context/LanguageContext';
 
 const LandingPage = () => {
+  const { language, changeLanguage, SUPPORTED_LANGUAGES, t } = useLanguage();
+  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -130,29 +133,67 @@ const LandingPage = () => {
           </nav>
 
           <div className="hidden lg:flex items-center gap-3">
+            {/* Trilingual Language Selector */}
+            <div className="relative">
+              <button 
+                onClick={() => setLangDropdownOpen(o => !o)}
+                className="px-3.5 py-2 text-xs font-bold text-slate-700 bg-white/90 hover:bg-white border border-slate-200/80 rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                title="Change Language"
+              >
+                <Globe size={14} className="text-blue-600" />
+                <span>{SUPPORTED_LANGUAGES.find(l => l.code === language)?.nativeName || 'English'}</span>
+                <ChevronDown size={12} className="text-slate-400" />
+              </button>
+              {langDropdownOpen && (
+                <div className="absolute right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden min-w-[140px] animate-in fade-in duration-150">
+                  {SUPPORTED_LANGUAGES.map(l => (
+                    <button
+                      key={l.code}
+                      onClick={() => { changeLanguage(l.code); setLangDropdownOpen(false); }}
+                      className={`w-full flex items-center gap-2 px-3.5 py-2.5 text-[13px] hover:bg-blue-50 transition-colors cursor-pointer text-left ${
+                        language === l.code ? 'bg-blue-50 font-bold text-blue-700' : 'text-slate-700'
+                      }`}
+                    >
+                      <span>{l.flag}</span>
+                      <span>{l.nativeName}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <button 
               onClick={() => openBookingFor(null)}
               className="px-4 py-2.5 text-xs font-bold text-blue-700 bg-blue-50/90 hover:bg-blue-100/90 border border-blue-200/80 rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
             >
-              <Calendar size={14} className="text-blue-600" /> Book OPD Slot
+              <Calendar size={14} className="text-blue-600" /> {t('bookConsultation')}
             </button>
             <Link to="/portal" className="px-4 py-2.5 text-xs font-bold text-slate-700 bg-white/90 hover:bg-white border border-slate-200/80 rounded-xl transition-all shadow-sm">
-              Patient Portal
+              {t('hero_portal')}
             </Link>
             <Link to="/login" className="px-3.5 py-2 text-xs font-bold text-slate-700 hover:text-blue-700 transition-all flex items-center gap-1.5">
               <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shadow-xs">
                 <Stethoscope size={11} />
               </div>
-              <span>Staff Login</span>
+              <span>{t('hero_cta2')}</span>
             </Link>
             <Link to="/hospital-register" className="px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl shadow-lg shadow-blue-500/25 hover:-translate-y-0.5 transition-all">
               Partner Hospital
             </Link>
           </div>
 
-          <button className="lg:hidden p-2 text-slate-700" onClick={() => setMobileMenuOpen(true)}>
-            <Menu size={24} />
-          </button>
+          <div className="lg:hidden flex items-center gap-2">
+            <button 
+              onClick={() => setLangDropdownOpen(o => !o)}
+              className="p-2 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-xl flex items-center gap-1"
+            >
+              <Globe size={16} className="text-blue-600" />
+              <span>{language.toUpperCase()}</span>
+            </button>
+            <button className="p-2 text-slate-700" onClick={() => setMobileMenuOpen(true)}>
+              <Menu size={24} />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -166,27 +207,46 @@ const LandingPage = () => {
             </button>
           </div>
           <div className="flex flex-col p-6 gap-4 flex-1 overflow-y-auto">
+            {/* Language Switcher in Mobile Drawer */}
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <span className="text-xs font-bold text-slate-500 uppercase block mb-2">{t('selectLanguage')}</span>
+              <div className="grid grid-cols-3 gap-2">
+                {SUPPORTED_LANGUAGES.map(l => (
+                  <button
+                    key={l.code}
+                    onClick={() => changeLanguage(l.code)}
+                    className={`py-2 px-2 rounded-lg text-xs font-bold border flex flex-col items-center justify-center gap-1 ${
+                      language === l.code ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-200'
+                    }`}
+                  >
+                    <span>{l.flag}</span>
+                    <span>{l.nativeName}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <a href="#platform" onClick={() => setMobileMenuOpen(false)} className="py-3 text-base font-bold text-slate-800 border-b border-slate-100">Platform Architecture</a>
             <a href="#ai-engine" onClick={() => setMobileMenuOpen(false)} className="py-3 text-base font-bold text-slate-800 border-b border-slate-100">AI Risk Stratification</a>
             <a href="#departments" onClick={() => setMobileMenuOpen(false)} className="py-3 text-base font-bold text-slate-800 border-b border-slate-100">Ward Workflows</a>
-            <a href="#booking" onClick={() => setMobileMenuOpen(false)} className="py-3 text-base font-bold text-slate-800 border-b border-slate-100">Book Consultation</a>
+            <a href="#booking" onClick={() => setMobileMenuOpen(false)} className="py-3 text-base font-bold text-slate-800 border-b border-slate-100">{t('bookConsultation')}</a>
             <a href="#roi" onClick={() => setMobileMenuOpen(false)} className="py-3 text-base font-bold text-slate-800 border-b border-slate-100">Hospital ROI</a>
             
-            <div className="pt-6 flex flex-col gap-3">
+            <div className="pt-4 flex flex-col gap-3">
               <button 
                 onClick={() => { setMobileMenuOpen(false); openBookingFor(null); }}
                 className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-md flex items-center justify-center gap-2"
               >
-                <Calendar size={16} /> Book OPD Slot
+                <Calendar size={16} /> {t('bookConsultation')}
               </button>
               <Link to="/portal" className="w-full py-3.5 text-center text-sm font-bold bg-slate-100 text-slate-800 rounded-xl">
-                Patient Portal
+                {t('hero_portal')}
               </Link>
               <Link to="/login" className="w-full py-3.5 text-center text-sm font-bold bg-slate-100 text-slate-800 rounded-xl flex items-center justify-center gap-2">
                 <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shadow-xs">
                   <Stethoscope size={12} />
                 </div>
-                <span>Staff Login</span>
+                <span>{t('hero_cta2')}</span>
               </Link>
               <Link to="/hospital-register" className="w-full py-3.5 text-center text-sm font-bold bg-slate-900 text-white rounded-xl">
                 Partner With Us

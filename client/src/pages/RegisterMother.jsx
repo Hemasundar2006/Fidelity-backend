@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { UploadCloud, CheckCircle, ChevronRight, ChevronLeft, Shield, RotateCcw } from 'lucide-react';
+import { UploadCloud, CheckCircle, ChevronRight, ChevronLeft, Shield, RotateCcw, Link2, FileText, CheckCircle2, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE } from '../config';
+import ReportExchange from '../components/ReportExchange';
 
 const STEPS = ['Personal', 'Medical History', 'Partner', 'Documents', 'Consent'];
 
@@ -9,6 +10,7 @@ const initialFormData = {
   name: '',
   dob: '',
   phone: '',
+  abhaId: '',
   bloodGroup: '',
   address: { line1: '', city: '', state: '', pincode: '' },
   medicalHistory: { allergies: '', conditions: '', surgeries: '', medications: '' },
@@ -33,6 +35,12 @@ const RegisterMother = () => {
   const [successData, setSuccessData] = useState(null);
   const [errors, setErrors] = useState({});
   const [doctors, setDoctors] = useState([]);
+  const [showReportExchange, setShowReportExchange] = useState(false);
+  const [abhaVerified, setAbhaVerified] = useState(Boolean(formData.abhaId));
+  const [isVerifyingAbha, setIsVerifyingAbha] = useState(false);
+  const [showAbhaOtpInput, setShowAbhaOtpInput] = useState(false);
+  const [abhaOtp, setAbhaOtp] = useState('123456');
+  const [abhaFeedback, setAbhaFeedback] = useState('');
   const { authHeader } = useAuth();
 
   useEffect(() => {
@@ -92,6 +100,41 @@ const RegisterMother = () => {
       delete newErrs[errorKey];
       return newErrs;
     });
+  };
+
+  const handleSendAbhaOtp = () => {
+    if (!formData.abhaId || !formData.abhaId.trim()) {
+      updateForm('abhaId', '14-4920-8831-9012');
+    }
+    setIsVerifyingAbha(true);
+    setTimeout(() => {
+      setIsVerifyingAbha(false);
+      setShowAbhaOtpInput(true);
+      setAbhaFeedback('Mock OTP (123456) sent to registered mobile linked with ABHA/Aadhaar.');
+    }, 500);
+  };
+
+  const handleVerifyAbhaOtp = () => {
+    if (!abhaOtp.trim()) return;
+    setAbhaVerified(true);
+    setShowAbhaOtpInput(false);
+    setAbhaFeedback('✅ ABHA verified successfully! Demographics autofilled from ABDM Gateway.');
+
+    // Autofill form data if fields are empty
+    setFormData(prev => ({
+      ...prev,
+      name: prev.name || 'Lakshmi Devi',
+      dob: prev.dob || '1998-05-14',
+      phone: prev.phone || '9876543210',
+      bloodGroup: prev.bloodGroup || 'B+',
+      address: {
+        ...prev.address,
+        line1: prev.address?.line1 || '12-4 Temple Road',
+        city: prev.address?.city || 'Hyderabad',
+        state: prev.address?.state || 'Telangana',
+        pincode: prev.address?.pincode || '500034'
+      }
+    }));
   };
 
   const validateStep = (step) => {
@@ -304,6 +347,98 @@ const RegisterMother = () => {
           {currentStep === 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
               <h2 className="md:col-span-2 text-[16px] leading-[24px] font-semibold text-blue-800 m-0">Personal Details</h2>
+
+              {/* ── ABHA Health ID & ABDM Integration Field ── */}
+              <div className="md:col-span-2 p-4 rounded-xl bg-gradient-to-r from-teal-50 via-cyan-50/40 to-emerald-50/40 border border-teal-200/80">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <Link2 size={16} className="text-teal-700" />
+                    <span className="text-[13px] font-bold text-teal-950 uppercase tracking-wider">
+                      ABHA ID (Ayushman Bharat Digital Mission)
+                    </span>
+                    {abhaVerified && (
+                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100 border border-emerald-300 px-2 py-0.2 rounded-full flex items-center gap-1">
+                        <CheckCircle2 size={12} /> Verified & Linked
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowReportExchange(true)}
+                    className="text-[12px] font-semibold text-teal-700 hover:text-teal-900 underline flex items-center gap-1 cursor-pointer self-start sm:self-auto"
+                  >
+                    <FileText size={13} /> Open ABDM Report Exchange
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+                  <div className="sm:col-span-6 flex flex-col gap-1">
+                    <label className="text-[11px] uppercase tracking-[0.06em] font-semibold text-ink-600">
+                      Enter 14-Digit ABHA Number (e.g. 14-4920-8831-9012)
+                    </label>
+                    <input
+                      type="text"
+                      className="input font-mono max-sm:h-[44px]"
+                      value={formData.abhaId || ''}
+                      onChange={e => updateForm('abhaId', e.target.value)}
+                      placeholder="14-4920-8831-9012"
+                    />
+                  </div>
+
+                  {!showAbhaOtpInput ? (
+                    <div className="sm:col-span-6 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSendAbhaOtp}
+                        disabled={isVerifyingAbha}
+                        className="btn bg-teal-700 hover:bg-teal-800 text-white text-[12px] h-[40px] px-3.5 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
+                      >
+                        {isVerifyingAbha ? 'Sending...' : 'Verify & Autofill via ABDM'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateForm('abhaId', '14-4920-8831-9012');
+                          setShowAbhaOtpInput(true);
+                        }}
+                        className="btn btn-outline text-ink-600 hover:text-teal-800 text-[11px] h-[40px] px-2.5 border-ink-200 whitespace-nowrap cursor-pointer"
+                      >
+                        Demo ABHA
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="sm:col-span-6 flex items-center gap-2">
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          maxLength={6}
+                          value={abhaOtp}
+                          onChange={e => setAbhaOtp(e.target.value)}
+                          placeholder="OTP: 123456"
+                          className="input font-mono text-center tracking-widest text-[12px] h-[40px]"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleVerifyAbhaOtp}
+                        className="btn bg-emerald-600 hover:bg-emerald-700 text-white text-[12px] h-[40px] px-4 cursor-pointer shadow-xs whitespace-nowrap"
+                      >
+                        Confirm & Autofill
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {abhaFeedback ? (
+                  <p className="text-[11px] text-teal-800 font-medium mt-2 m-0 flex items-center gap-1">
+                    <Sparkles size={12} className="text-amber-500" /> {abhaFeedback}
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-teal-800/80 mt-1.5 m-0">
+                    Linking ABHA verifies Aadhaar e-KYC and allows automatic import of prior pregnancy & hospital diagnostic records.
+                  </p>
+                )}
+              </div>
               <div className="flex flex-col gap-[6px]">
                 <label className="text-[12px] leading-[16px] uppercase tracking-[0.06em] font-semibold text-ink-600">Full Name <span className="text-red-500">*</span></label>
                 <input type="text" className={`input max-sm:h-[48px] max-sm:text-[16px] ${errors.name ? 'border-red-500' : ''}`} value={formData.name} onChange={e => updateForm('name', e.target.value)} placeholder="e.g. Lakshmi Devi" />
@@ -509,6 +644,16 @@ const RegisterMother = () => {
           </button>
         )}
       </div>
+
+      <ReportExchange
+        isOpen={showReportExchange}
+        onClose={() => setShowReportExchange(false)}
+        patient={formData}
+        onAbhaLinked={(num) => {
+          updateForm('abhaId', num);
+          setAbhaVerified(true);
+        }}
+      />
     </div>
   );
 };

@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   HeartPulse, Users, Thermometer, RefreshCw, ChevronRight,
-  AlertTriangle, CheckCircle2, Clock, Baby, Activity, Loader
+  AlertTriangle, CheckCircle2, Clock, Baby, Activity, Loader,
+  Link2, FileText
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE } from '../config';
+import ReportExchange from '../components/ReportExchange';
 
 const StatCard = ({ icon: Icon, label, value, color = 'blue' }) => {
   const c = {
@@ -35,6 +37,8 @@ const NurseDashboard = () => {
   const [highRisk, setHighRisk] = useState([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [showReportExchange, setShowReportExchange] = useState(false);
+  const [selectedPatientForExchange, setSelectedPatientForExchange] = useState(null);
 
   const load = async () => {
     setSyncing(true);
@@ -78,9 +82,17 @@ const NurseDashboard = () => {
           <h1 className="text-2xl font-bold font-heading text-ink-900">Ward / Nursing Dashboard</h1>
           <p className="text-sm text-ink-500 mt-0.5">Welcome, {user?.name || 'Nurse'} — Maternity ward overview</p>
         </div>
-        <button onClick={load} disabled={syncing} className="btn btn-secondary h-[36px] px-3 text-sm flex items-center gap-2 cursor-pointer">
-          <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} /> Sync
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => { setSelectedPatientForExchange(null); setShowReportExchange(true); }}
+            className="btn bg-gradient-to-r from-teal-700 to-cyan-700 hover:from-teal-800 hover:to-cyan-800 text-white h-[36px] px-3.5 text-xs font-semibold flex items-center gap-2 cursor-pointer shadow-xs border-0"
+          >
+            <Link2 size={15} /> ABDM Report Exchange
+          </button>
+          <button onClick={load} disabled={syncing} className="btn btn-secondary h-[36px] px-3 text-sm flex items-center gap-2 cursor-pointer">
+            <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} /> Sync
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -144,7 +156,21 @@ const NurseDashboard = () => {
                   <p className="font-medium text-ink-900 text-[13px] truncate">{p.name}</p>
                   <p className="text-[11px] text-ink-500">{p.motherId || p._id?.slice(-6)}</p>
                 </div>
-                <ChevronRight size={14} className="text-ink-400" />
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSelectedPatientForExchange(p);
+                        setShowReportExchange(true);
+                      }}
+                      className="text-[11px] font-semibold text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 border border-teal-200 px-2 py-1 rounded-md flex items-center gap-1 transition-colors cursor-pointer"
+                      title="Open ABDM Report Exchange for this patient"
+                    >
+                      <Link2 size={12} /> ABDM
+                    </button>
+                    <ChevronRight size={14} className="text-ink-400" />
+                  </div>
               </Link>
             ))}
             {patients.length === 0 && <div className="p-6 text-center text-ink-400 text-sm">No patients found</div>}
@@ -155,26 +181,50 @@ const NurseDashboard = () => {
       {/* Nursing Quick Actions */}
       <div className="bg-white rounded-xl border border-ink-100 shadow-sm p-5">
         <h3 className="font-semibold text-ink-900 mb-4 text-[15px]">Quick Actions</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {[
             { to: '/patients/search', icon: Users, label: 'Patient Search', color: 'pink' },
             { to: '/patients/register', icon: Baby, label: 'New Admission', color: 'blue' },
+            { onClick: () => { setSelectedPatientForExchange(null); setShowReportExchange(true); }, icon: Link2, label: 'ABDM Exchange', color: 'teal' },
             { to: '/patients/search', icon: Activity, label: 'Vitals Entry', color: 'green' },
             { to: '/patients/search', icon: Clock, label: 'Ward Rounds', color: 'amber' },
-          ].map(a => (
-            <Link
-              key={a.label}
-              to={a.to}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl border border-ink-100 hover:border-pink-300 hover:shadow-md transition-all group"
-            >
-              <div className={`w-10 h-10 rounded-xl bg-${a.color}-50 flex items-center justify-center`}>
-                <a.icon size={20} className={`text-${a.color}-600`} />
-              </div>
-              <span className="text-[12px] font-semibold text-ink-700 text-center group-hover:text-pink-700">{a.label}</span>
-            </Link>
-          ))}
+          ].map((a, i) =>
+            a.onClick ? (
+              <button
+                key={i}
+                onClick={a.onClick}
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-ink-100 hover:border-teal-300 hover:shadow-md transition-all group cursor-pointer bg-white"
+              >
+                <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center">
+                  <a.icon size={20} className="text-teal-600" />
+                </div>
+                <span className="text-[12px] font-semibold text-ink-700 text-center group-hover:text-teal-700">{a.label}</span>
+              </button>
+            ) : (
+              <Link
+                key={i}
+                to={a.to}
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-ink-100 hover:border-pink-300 hover:shadow-md transition-all group"
+              >
+                <div className={`w-10 h-10 rounded-xl bg-${a.color}-50 flex items-center justify-center`}>
+                  <a.icon size={20} className={`text-${a.color}-600`} />
+                </div>
+                <span className="text-[12px] font-semibold text-ink-700 text-center group-hover:text-pink-700">{a.label}</span>
+              </Link>
+            )
+          )}
         </div>
       </div>
+
+      <ReportExchange
+        isOpen={showReportExchange}
+        onClose={() => {
+          setShowReportExchange(false);
+          setSelectedPatientForExchange(null);
+        }}
+        patient={selectedPatientForExchange}
+        onRecordImported={() => load()}
+      />
     </div>
   );
 };

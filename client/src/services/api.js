@@ -203,4 +203,19 @@ export const askRagPersonalAssistant = async ({ patientId, query, conversationHi
   return data.data;
 };
 
+// 11. Prescription Reader - AI Vision analysis via our backend (NOT direct Google API call)
+export const readPrescriptionAI = async ({ imageBase64, mimeType = 'image/jpeg', language = 'te', patientName = '' }) => {
+  const res = await fetch(`${API_BASE}/rag/prescription-read`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ imageBase64, mimeType, language, patientName })
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data?.message || data?.error?.message || 'Prescription analysis failed');
+  }
+  return data.data;
+};
+
+
 

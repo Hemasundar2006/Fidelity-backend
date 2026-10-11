@@ -1,19 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Calendar, FileText, Baby, Activity, AlertCircle, Loader, UploadCloud, ShieldAlert, Volume2, Sparkles } from 'lucide-react';
+import { Calendar, FileText, Baby, Activity, AlertCircle, Loader, UploadCloud, ShieldAlert, Volume2, Sparkles, ScanLine, Link2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE } from '../config';
 import JanmaLinkAIAssistant from '../components/JanmaLinkAIAssistant';
+import PrescriptionReader from '../components/PrescriptionReader';
+import ReportExchange from '../components/ReportExchange';
+import { useLanguage } from '../context/LanguageContext';
 
 const PatientProfile = () => {
   const { id } = useParams();
   const { authHeader } = useAuth();
+  const { t } = useLanguage();
   
   const [patientData, setPatientData] = useState(null);
   const [timelineEvents, setTimelineEvents] = useState([]);
   const [summaryBullets, setSummaryBullets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCopilot, setShowCopilot] = useState(false);
+  const [showPrescriptionReader, setShowPrescriptionReader] = useState(false);
+  const [showReportExchange, setShowReportExchange] = useState(false);
 
   useEffect(() => {
     const fetchPatientData = async () => {
@@ -125,10 +131,17 @@ const PatientProfile = () => {
             className="btn bg-gradient-to-r from-teal-600 to-cyan-700 hover:from-teal-700 hover:to-cyan-800 text-white font-semibold flex items-center gap-1.5 shadow-sm max-sm:flex-1 h-[40px] max-sm:h-[48px] max-sm:text-[16px] px-3.5 cursor-pointer border-0"
             title="Open Bilingual Voice AI Copilot (Telugu / English)"
           >
-            <Volume2 size={16} /> Voice Copilot
+            <Volume2 size={16} /> {t('voiceCopilot')}
           </button>
-          <Link to={`/patients/${patient.id}/pregnancy`} className="btn btn-primary max-sm:flex-1 h-[40px] max-sm:h-[48px] max-sm:text-[16px]">Track Pregnancy</Link>
-          <Link to={`/patients/${patient.id}/reports?upload=true`} className="btn btn-outline border-ink-200 h-[40px] max-sm:h-[48px] max-sm:flex-1 max-sm:text-[16px]">Upload Report</Link>
+          <button
+            onClick={() => setShowPrescriptionReader(true)}
+            className="btn bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 text-white font-semibold flex items-center gap-1.5 shadow-sm max-sm:flex-1 h-[40px] max-sm:h-[48px] max-sm:text-[16px] px-3.5 cursor-pointer border-0"
+            title="Open AI Prescription Reader (Telugu / Hindi / English)"
+          >
+            <ScanLine size={16} /> {t('prescriptionReader')}
+          </button>
+          <Link to={`/patients/${patient.id}/pregnancy`} className="btn btn-primary max-sm:flex-1 h-[40px] max-sm:h-[48px] max-sm:text-[16px]">{t('trackPregnancy')}</Link>
+          <Link to={`/patients/${patient.id}/reports?upload=true`} className="btn btn-outline border-ink-200 h-[40px] max-sm:h-[48px] max-sm:flex-1 max-sm:text-[16px]">{t('uploadReport')}</Link>
         </div>
       </div>
 
@@ -137,7 +150,7 @@ const PatientProfile = () => {
         {/* Main Timeline */}
         <div className="lg:col-span-2">
           <div className="card h-full flex flex-col">
-            <h2 className="text-[16px] leading-[24px] font-semibold text-blue-800 m-0 mb-6 max-sm:mb-4">Patient Longitudinal Timeline</h2>
+            <h2 className="text-[16px] leading-[24px] font-semibold text-blue-800 m-0 mb-6 max-sm:mb-4">{t('longitudinalTimeline')}</h2>
             
             <div className="flex flex-col gap-6 max-sm:gap-4 flex-1">
               {displayTimeline.map((event, i) => (
@@ -175,7 +188,7 @@ const PatientProfile = () => {
           <div className="card">
             <div className="flex justify-between items-center mb-4 max-sm:mb-3 pb-3 max-sm:pb-2 border-b border-ink-100">
               <h3 className="text-[14px] leading-[22px] font-semibold text-blue-800 m-0 flex items-center gap-2">
-                <Activity size={18} className="text-pink-500" /> Clinical Summary
+                <Activity size={18} className="text-pink-500" /> {t('clinicalSummary')}
               </h3>
               <span className="text-[12px] text-ink-400">Updated Today</span>
             </div>
@@ -196,7 +209,7 @@ const PatientProfile = () => {
 
           <div className="card bg-red-50 border border-red-200">
             <h3 className="flex items-center gap-2 text-red-700 font-semibold text-[14px] leading-[22px] mb-3 m-0">
-              <AlertCircle size={18} /> Active Alerts
+              <AlertCircle size={18} /> {t('activeAlerts')}
             </h3>
             <div className="p-3 bg-white rounded-xl border border-red-200 mb-2.5">
               <p className="font-semibold text-red-700 text-[13px] leading-[20px] m-0 mb-0.5">High BP Flag (150/98)</p>
@@ -210,7 +223,7 @@ const PatientProfile = () => {
 
           <div className="card">
             <h3 className="text-[14px] leading-[22px] font-semibold text-blue-800 m-0 mb-4 flex items-center gap-2">
-              <FileText size={18} className="text-blue-600" /> Share with Patient Portal
+              <FileText size={18} className="text-blue-600" /> {t('shareWithPatient')}
             </h3>
             
             <form onSubmit={async (e) => {
@@ -238,20 +251,32 @@ const PatientProfile = () => {
                 }
               }
             }} className="mb-5">
-              <label className="text-[12px] font-semibold text-ink-900 block mb-1">Add Clinical Precaution / Note</label>
+              <label className="text-[12px] font-semibold text-ink-900 block mb-1">{t('addClinicalNote')}</label>
               <textarea name="precaution" className="input text-[13px] h-20 mb-2" placeholder="e.g. Please avoid lifting heavy objects due to BP..."></textarea>
-              <button type="submit" className="btn btn-primary h-[34px] text-[12px] w-full">Share Precaution</button>
+              <button type="submit" className="btn btn-primary h-[34px] text-[12px] w-full">{t('sharePrecaution')}</button>
             </form>
 
             <div className="border border-blue-100 bg-blue-50/50 rounded-xl p-4 text-center">
-              <label className="text-[12px] font-bold text-blue-900 block mb-1">Upload Diagnostic Record</label>
+              <label className="text-[12px] font-bold text-blue-900 block mb-1">{t('uploadDiagnostic')}</label>
               <p className="text-[11px] text-ink-600 mb-3">Scan lab report with AI OCR or generate official PDF with dynamic templates</p>
               <Link 
                 to={`/patients/${patient.id}/reports?upload=true`} 
-                className="btn btn-primary h-[36px] text-[12px] w-full flex items-center justify-center gap-1.5"
+                className="btn btn-primary h-[36px] text-[12px] w-full flex items-center justify-center gap-1.5 mb-2"
               >
-                <UploadCloud size={15} /> Open OCR Report Scanner
+                <UploadCloud size={15} /> {t('openOcrScanner')}
               </Link>
+              <button
+                onClick={() => setShowPrescriptionReader(true)}
+                className="btn bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 text-white h-[36px] text-[12px] w-full flex items-center justify-center gap-1.5 cursor-pointer border-0 mb-2"
+              >
+                <ScanLine size={15} /> {t('openPrescriptionReader')}
+              </button>
+              <button
+                onClick={() => setShowReportExchange(true)}
+                className="btn bg-gradient-to-r from-teal-700 to-cyan-700 hover:from-teal-800 hover:to-cyan-800 text-white h-[36px] text-[12px] w-full flex items-center justify-center gap-1.5 cursor-pointer border-0"
+              >
+                <Link2 size={15} /> {t('reportExchange')}
+              </button>
             </div>
           </div>
         </div>
@@ -260,6 +285,17 @@ const PatientProfile = () => {
         isOpen={showCopilot} 
         onClose={() => setShowCopilot(false)} 
         patientContext={patient} 
+      />
+      <PrescriptionReader
+        isOpen={showPrescriptionReader}
+        onClose={() => setShowPrescriptionReader(false)}
+        patientName={patient.name}
+        patientId={patient.id}
+      />
+      <ReportExchange
+        isOpen={showReportExchange}
+        onClose={() => setShowReportExchange(false)}
+        patient={patient}
       />
     </div>
   );

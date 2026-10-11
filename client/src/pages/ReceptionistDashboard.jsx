@@ -4,10 +4,11 @@ import {
   Calendar, Clock, CheckCircle2, UserPlus, RefreshCw,
   Globe, ExternalLink, AlertTriangle, ChevronRight, X,
   Phone, User, Filter, Search, Loader, Users,
-  ClipboardList, LogIn
+  ClipboardList, LogIn, Link2, FileText
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { fetchAppointments, updateAppointmentStatus } from '../services/api';
+import ReportExchange from '../components/ReportExchange';
 
 // ─── Small stat card ───────────────────────────────────────────────────────
 const StatChip = ({ icon: Icon, label, value, color = 'blue' }) => {
@@ -69,6 +70,8 @@ const ReceptionistDashboard = () => {
   const [searchQ, setSearchQ] = useState('');
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [checkingIn, setCheckingIn] = useState(null);     // aptId being processed
+  const [showReportExchange, setShowReportExchange] = useState(false);
+  const [selectedPatientForExchange, setSelectedPatientForExchange] = useState(null);
 
   // ── Fetch live appointments ──────────────────────────────────────────────
   const loadQueue = async (isBackground = false) => {
@@ -170,6 +173,12 @@ const ReceptionistDashboard = () => {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <button
+            onClick={() => { setSelectedPatientForExchange(null); setShowReportExchange(true); }}
+            className="btn bg-gradient-to-r from-teal-700 to-cyan-700 hover:from-teal-800 hover:to-cyan-800 text-white h-[36px] px-3.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs border-0"
+          >
+            <Link2 size={14} /> ABDM Report Exchange
+          </button>
+          <button
             onClick={() => loadQueue()}
             disabled={syncing}
             className="btn btn-secondary h-[36px] px-3 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
@@ -196,9 +205,10 @@ const ReceptionistDashboard = () => {
       </div>
 
       {/* ── Quick Actions ───────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
           { to: '/patients/register', icon: UserPlus, label: 'Register New Patient', color: 'blue' },
+          { onClick: () => { setSelectedPatientForExchange(null); setShowReportExchange(true); }, icon: Link2, label: 'ABDM Exchange', color: 'teal' },
           { to: '/patients/search', icon: Users, label: 'Patient Directory', color: 'green' },
           { to: '/', target: '_blank', icon: Globe, label: 'Open Patient Website', color: 'pink' },
           { onClick: () => loadQueue(), icon: RefreshCw, label: 'Refresh Queue', color: 'amber' },
@@ -415,20 +425,37 @@ const ReceptionistDashboard = () => {
 
                     {/* Check In Action */}
                     <td className="px-4 py-3.5 text-right">
-                      {apt.status !== 'checked_in' && apt.status !== 'Checked In' && apt.status !== 'completed' && (
+                      <div className="flex items-center justify-end gap-1.5">
                         <button
-                          onClick={() => handleCheckIn(apt.id)}
-                          disabled={checkingIn === apt.id}
-                          className="h-[30px] px-3 text-[11px] font-semibold rounded-lg border border-green-300 text-green-700 bg-green-50 hover:bg-green-100 transition-colors cursor-pointer flex items-center gap-1.5 ml-auto disabled:opacity-50"
+                          onClick={() => {
+                            setSelectedPatientForExchange({
+                              _id: apt.patientId,
+                              name: apt.patientName,
+                              phone: apt.patientPhone,
+                              motherId: apt.bookingRef
+                            });
+                            setShowReportExchange(true);
+                          }}
+                          className="h-[30px] px-2.5 text-[11px] font-semibold rounded-lg border border-teal-300 text-teal-800 bg-teal-50 hover:bg-teal-100 transition-colors cursor-pointer flex items-center gap-1"
+                          title="Open ABDM Report Exchange"
                         >
-                          {checkingIn === apt.id ? (
-                            <Loader size={10} className="animate-spin" />
-                          ) : (
-                            <LogIn size={11} />
-                          )}
-                          Check In
+                          <Link2 size={11} /> ABDM
                         </button>
-                      )}
+                        {apt.status !== 'checked_in' && apt.status !== 'Checked In' && apt.status !== 'completed' && (
+                          <button
+                            onClick={() => handleCheckIn(apt.id)}
+                            disabled={checkingIn === apt.id}
+                            className="h-[30px] px-3 text-[11px] font-semibold rounded-lg border border-green-300 text-green-700 bg-green-50 hover:bg-green-100 transition-colors cursor-pointer flex items-center gap-1.5 ml-auto disabled:opacity-50"
+                          >
+                            {checkingIn === apt.id ? (
+                              <Loader size={10} className="animate-spin" />
+                            ) : (
+                              <LogIn size={11} />
+                            )}
+                            Check In
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -521,6 +548,17 @@ const ReceptionistDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* ── Report Exchange Modal Mount ─────────────────────────────── */}
+      <ReportExchange
+        isOpen={showReportExchange}
+        onClose={() => {
+          setShowReportExchange(false);
+          setSelectedPatientForExchange(null);
+        }}
+        patient={selectedPatientForExchange}
+        onRecordImported={() => loadQueue(true)}
+      />
     </div>
   );
 };

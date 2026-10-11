@@ -4,18 +4,21 @@ import {
   FileText, UploadCloud, AlertTriangle, Eye, X, Calendar, Download, 
   Search, Plus, Trash2, Sparkles, CheckCircle2, Loader, ArrowLeft, 
   ShieldCheck, RefreshCw, FileCheck, Camera, Printer, ChevronRight,
-  RotateCw, UserCheck, HeartPulse, Activity
+  RotateCw, UserCheck, HeartPulse, Activity, ScanLine
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { API_BASE } from '../config';
 import { REPORT_TEMPLATES, calculateFlag } from '../services/reportTemplates';
 import { runReportOcr } from '../services/ocrService';
 import { generateDiagnosticPdf } from '../services/pdfReportGenerator';
+import PrescriptionReader from '../components/PrescriptionReader';
 
 const Reports = () => {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const { authHeader, user } = useAuth();
+  const { t } = useLanguage();
 
   // State: Data
   const [reports, setReports] = useState([]);
@@ -26,6 +29,7 @@ const Reports = () => {
   
   // Modals & Drawer
   const [isUploadModalOpen, setUploadModalOpen] = useState(false);
+  const [showPrescriptionReader, setShowPrescriptionReader] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -519,6 +523,14 @@ const Reports = () => {
             title="Refresh reports"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+          </button>
+          <button 
+            type="button" 
+            className="btn h-10 px-4 flex items-center gap-2 shadow-sm font-semibold text-sm bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 text-white cursor-pointer"
+            onClick={() => setShowPrescriptionReader(true)}
+            title="Open AI Prescription Reader (Telugu, Hindi, English)"
+          >
+            <ScanLine size={17} /> {t('prescriptionReader')} (AI)
           </button>
           <button 
             type="button" 
@@ -1417,6 +1429,14 @@ const Reports = () => {
           </div>
         </div>
       )}
+
+      {/* Trilingual AI Prescription Reader Modal */}
+      <PrescriptionReader
+        isOpen={showPrescriptionReader}
+        onClose={() => setShowPrescriptionReader(false)}
+        patientName={patient?.name || ''}
+        patientId={patient?.motherId || id || ''}
+      />
 
     </div>
   );

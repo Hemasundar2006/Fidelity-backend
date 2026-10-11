@@ -7,6 +7,7 @@ import {
   X, PanelLeftClose, PanelLeftOpen, Terminal, Package, Building2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 // Brand Colors
 const BLUE = '#76C0EC';
@@ -19,61 +20,61 @@ const PINK_LIGHT = '#fff0f2';
 // Nav items by role
 const ROLE_NAV = {
   superadmin: [
-    { path: '/super-admin', label: 'Platform Overview', icon: LayoutDashboard },
-    { path: '/super-admin/hospitals', label: 'Partner Hospitals', icon: Building2 },
-    { path: '/super-admin/offerings', label: 'Platform Offerings', icon: Package },
-    { path: '/super-admin/logs', label: 'System Logs', icon: Terminal },
+    { path: '/super-admin', label: 'Platform Overview', transKey: 'platformOverview', icon: LayoutDashboard },
+    { path: '/super-admin/hospitals', label: 'Partner Hospitals', transKey: 'partnerHospitals', icon: Building2 },
+    { path: '/super-admin/offerings', label: 'Platform Offerings', transKey: 'platformOfferings', icon: Package },
+    { path: '/super-admin/logs', label: 'System Logs', transKey: 'systemLogs', icon: Terminal },
   ],
   admin: [
-    { path: '/dashboard/admin', label: 'Admin Overview', icon: LayoutDashboard },
-    { path: '/admin', label: 'System Admin', icon: Settings },
-    { path: '/patients/search', label: 'Patient Directory', icon: Users },
-    { path: '/patients/register', label: 'Register Mother', icon: UserPlus },
-    { path: '/babies/search', label: 'Baby Directory', icon: Baby },
-    { path: '/babies/register', label: 'Register Baby', icon: Baby },
-    { path: '/fetus-monitor', label: 'Fetal Monitor', icon: Activity },
-    { path: '/maternal-health-predictor', label: 'Risk Predictor', icon: HeartPulse },
+    { path: '/dashboard/admin', label: 'Admin Overview', transKey: 'adminOverview', icon: LayoutDashboard },
+    { path: '/admin', label: 'System Admin', transKey: 'systemAdmin', icon: Settings },
+    { path: '/patients/search', label: 'Patient Directory', transKey: 'patientDirectory', icon: Users },
+    { path: '/patients/register', label: 'Register Mother', transKey: 'registerMother', icon: UserPlus },
+    { path: '/babies/search', label: 'Baby Directory', transKey: 'babyDirectory', icon: Baby },
+    { path: '/babies/register', label: 'Register Baby', transKey: 'registerBaby', icon: Baby },
+    { path: '/fetus-monitor', label: 'Fetal Monitor', transKey: 'fetalMonitor', icon: Activity },
+    { path: '/maternal-health-predictor', label: 'Risk Predictor', transKey: 'riskPredictor', icon: HeartPulse },
   ],
   receptionist: [
-    { path: '/dashboard/receptionist', label: 'OPD Dashboard', icon: LayoutDashboard },
-    { path: '/patients/search', label: 'Patient Directory', icon: Users },
-    { path: '/babies/search', label: 'Baby Directory', icon: Baby },
-    { path: '/patients/register', label: 'Register Mother', icon: UserPlus },
-    { path: '/babies/register', label: 'Register Baby', icon: Baby },
+    { path: '/dashboard/receptionist', label: 'OPD Dashboard', transKey: 'opdDashboard', icon: LayoutDashboard },
+    { path: '/patients/search', label: 'Patient Directory', transKey: 'patientDirectory', icon: Users },
+    { path: '/babies/search', label: 'Baby Directory', transKey: 'babyDirectory', icon: Baby },
+    { path: '/patients/register', label: 'Register Mother', transKey: 'registerMother', icon: UserPlus },
+    { path: '/babies/register', label: 'Register Baby', transKey: 'registerBaby', icon: Baby },
   ],
   doctor: [
-    { path: '/dashboard/doctor', label: 'Clinical Dashboard', icon: Stethoscope },
-    { path: '/patients/search', label: 'My Patients', icon: Users },
-    { path: '/babies/search', label: 'Baby Directory', icon: Baby },
-    { path: '/fetus-monitor', label: 'Fetal Monitor', icon: Activity },
-    { path: '/maternal-health-predictor', label: 'Risk Predictor', icon: HeartPulse },
+    { path: '/dashboard/doctor', label: 'Clinical Dashboard', transKey: 'clinicalDashboard', icon: Stethoscope },
+    { path: '/patients/search', label: 'Patient Directory', transKey: 'patientDirectory', icon: Users },
+    { path: '/babies/search', label: 'Baby Directory', transKey: 'babyDirectory', icon: Baby },
+    { path: '/fetus-monitor', label: 'Fetal Monitor', transKey: 'fetalMonitor', icon: Activity },
+    { path: '/maternal-health-predictor', label: 'Risk Predictor', transKey: 'riskPredictor', icon: HeartPulse },
   ],
   nurse: [
-    { path: '/dashboard/nurse', label: 'Ward Dashboard', icon: HeartPulse },
-    { path: '/patients/search', label: 'Patient Directory', icon: Users },
-    { path: '/babies/search', label: 'Baby Directory', icon: Baby },
-    { path: '/babies/register', label: 'Register Baby', icon: Baby },
-    { path: '/fetus-monitor', label: 'Fetal Monitor', icon: Activity },
-    { path: '/maternal-health-predictor', label: 'Risk Predictor', icon: HeartPulse },
+    { path: '/dashboard/nurse', label: 'Ward Dashboard', transKey: 'wardDashboard', icon: HeartPulse },
+    { path: '/patients/search', label: 'Patient Directory', transKey: 'patientDirectory', icon: Users },
+    { path: '/babies/search', label: 'Baby Directory', transKey: 'babyDirectory', icon: Baby },
+    { path: '/babies/register', label: 'Register Baby', transKey: 'registerBaby', icon: Baby },
+    { path: '/fetus-monitor', label: 'Fetal Monitor', transKey: 'fetalMonitor', icon: Activity },
+    { path: '/maternal-health-predictor', label: 'Risk Predictor', transKey: 'riskPredictor', icon: HeartPulse },
   ],
   lab: [
-    { path: '/dashboard/lab', label: 'Lab Queue', icon: FlaskConical },
-    { path: '/patients/search', label: 'Patient Directory', icon: Users },
+    { path: '/dashboard/lab', label: 'Lab Queue', transKey: 'labQueue', icon: FlaskConical },
+    { path: '/patients/search', label: 'Patient Directory', transKey: 'patientDirectory', icon: Users },
   ],
   pharmacy: [
-    { path: '/dashboard/pharmacy', label: 'Pharmacy Queue', icon: Pill },
-    { path: '/patients/search', label: 'Patient Directory', icon: Users },
+    { path: '/dashboard/pharmacy', label: 'Pharmacy Queue', transKey: 'pharmacyQueue', icon: Pill },
+    { path: '/patients/search', label: 'Patient Directory', transKey: 'patientDirectory', icon: Users },
   ],
 };
 
 const ROLE_META = {
-  superadmin: { label: 'Platform Administrator', theme: 'pink' },
-  admin: { label: 'System Administrator', theme: 'blue' },
-  receptionist: { label: 'Receptionist', theme: 'blue' },
-  doctor: { label: 'Physician', theme: 'blue' },
-  nurse: { label: 'Nursing Staff', theme: 'pink' },
-  lab: { label: 'Lab Technician', theme: 'blue' },
-  pharmacy: { label: 'Pharmacist', theme: 'blue' },
+  superadmin: { label: 'Platform Administrator', transKey: 'superadmin', theme: 'pink' },
+  admin: { label: 'System Administrator', transKey: 'admin', theme: 'blue' },
+  receptionist: { label: 'Receptionist', transKey: 'receptionist', theme: 'blue' },
+  doctor: { label: 'Physician', transKey: 'doctor', theme: 'blue' },
+  nurse: { label: 'Nursing Staff', transKey: 'nurse', theme: 'pink' },
+  lab: { label: 'Lab Technician', transKey: 'lab', theme: 'blue' },
+  pharmacy: { label: 'Pharmacist', transKey: 'pharmacy', theme: 'blue' },
 };
 
 const getInitials = (name = '') =>
@@ -83,6 +84,8 @@ const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { language, changeLanguage, SUPPORTED_LANGUAGES, t } = useLanguage();
+  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -180,7 +183,7 @@ const Layout = () => {
         {isSidebarOpen ? (
           <div className="px-5 py-4 shrink-0 transition-opacity duration-300">
             <div className="px-3 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-wider text-center flex items-center justify-center border" style={{ backgroundColor: meta.theme === 'pink' ? PINK_LIGHT : BLUE_LIGHT, color: meta.theme === 'pink' ? PINK_DARK : BLUE_DARK, borderColor: meta.theme === 'pink' ? '#FF95A540' : '#76C0EC40' }}>
-              {meta.label}
+              {meta.transKey ? t(meta.transKey) : meta.label}
             </div>
           </div>
         ) : (
@@ -203,6 +206,7 @@ const Layout = () => {
               const isActive =
                 location.pathname === item.path ||
                 (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
+              const displayLabel = item.transKey ? t(item.transKey) : item.label;
 
               if (isSidebarOpen) {
                 return (
@@ -221,7 +225,7 @@ const Layout = () => {
                       className="shrink-0 transition-colors"
                       style={{ color: isActive ? BLUE_DARK : '#64748b' }}
                     />
-                    <span className="truncate opacity-100 transition-opacity duration-300 delay-100">{item.label}</span>
+                    <span className="truncate opacity-100 transition-opacity duration-300 delay-100">{displayLabel}</span>
                   </Link>
                 );
               }
@@ -230,7 +234,7 @@ const Layout = () => {
                 <Link
                   key={item.path}
                   to={item.path}
-                  title={item.label}
+                  title={displayLabel}
                   className={`flex items-center justify-center w-[44px] h-[44px] mx-auto rounded-xl transition-all duration-200 mb-1 ${
                     isActive
                       ? 'shadow-sm'
@@ -253,7 +257,7 @@ const Layout = () => {
               className="w-full flex items-center justify-center gap-2 px-3 h-[40px] rounded-lg text-[13px] font-bold text-slate-600 hover:text-red-600 hover:bg-red-50 border border-slate-200 hover:border-red-200 transition-all cursor-pointer"
             >
               <LogOut size={16} className="shrink-0" />
-              <span className="whitespace-nowrap">Logout</span>
+              <span className="whitespace-nowrap">{t('logout')}</span>
             </button>
           ) : (
             <button
@@ -310,7 +314,7 @@ const Layout = () => {
                 />
                 <input
                   type="text"
-                  placeholder="Search patient by name, ID, or phone..."
+                  placeholder={t('search') + '...'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full h-[40px] bg-slate-50 text-slate-800 placeholder:text-slate-400 text-[13px] rounded-lg pl-10 pr-4 border border-slate-200 focus:outline-none focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-500/10 transition-all"
@@ -320,13 +324,40 @@ const Layout = () => {
           )}
 
           {/* Right: Actions and User Profile */}
-          <div className="flex items-center gap-4 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Language Switcher */}
+            <div className="relative">
+              <button
+                onClick={() => { setLangDropdownOpen(o => !o); setProfileDropdownOpen(false); }}
+                className="hidden sm:flex h-[36px] px-3 rounded-lg text-xs font-medium items-center gap-1.5 bg-white text-slate-700 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 transition-colors shadow-sm cursor-pointer"
+                title="Change Language"
+              >
+                <Globe size={14} style={{ color: BLUE_DARK }} />
+                <span>{SUPPORTED_LANGUAGES.find(l => l.code === language)?.nativeName || 'EN'}</span>
+              </button>
+              {langDropdownOpen && (
+                <div className="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden min-w-[140px]">
+                  {SUPPORTED_LANGUAGES.map(lang => (
+                    <button
+                      key={lang.code}
+                      onClick={() => { changeLanguage(lang.code); setLangDropdownOpen(false); }}
+                      className={`w-full flex items-center gap-2 px-3 py-2.5 text-[13px] hover:bg-blue-50 transition-colors cursor-pointer text-left ${
+                        language === lang.code ? 'bg-blue-50 font-bold text-blue-700' : 'text-slate-700'
+                      }`}
+                    >
+                      <span>{lang.flag}</span>
+                      <span>{lang.nativeName}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <Link
               to="/"
               className="hidden sm:flex h-[36px] px-3.5 rounded-lg text-xs font-medium items-center gap-2 bg-white text-slate-700 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 transition-colors shadow-sm"
             >
               <Globe size={14} style={{ color: PINK_DARK }} />
-              <span>Patient Site</span>
+              <span>{t('hero_portal') || 'Patient Site'}</span>
             </Link>
             <button
               title="Notifications"
@@ -399,7 +430,7 @@ const Layout = () => {
             <div>
               <div className="flex items-center justify-between p-4 border-b border-slate-100">
                 <span className="px-3 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider" style={{ backgroundColor: meta.theme === 'pink' ? PINK_LIGHT : BLUE_LIGHT, color: meta.theme === 'pink' ? PINK_DARK : BLUE_DARK }}>
-                  {meta.label}
+                  {meta.transKey ? t(meta.transKey) : meta.label}
                 </span>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
@@ -411,6 +442,7 @@ const Layout = () => {
               <div className="flex flex-col py-2">
                 {navItems.map((item) => {
                   const isActive = location.pathname.startsWith(item.path);
+                  const displayLabel = item.transKey ? t(item.transKey) : item.label;
                   return (
                     <Link
                       key={item.path}
@@ -428,7 +460,7 @@ const Layout = () => {
                         className="shrink-0"
                         style={{ color: isActive ? BLUE_DARK : '#64748b' }}
                       />
-                      <span>{item.label}</span>
+                      <span>{displayLabel}</span>
                     </Link>
                   );
                 })}
@@ -441,7 +473,7 @@ const Layout = () => {
                 className="w-full flex items-center justify-center gap-2 h-[44px] rounded-lg text-[14px] font-bold text-slate-600 hover:text-red-600 bg-white border border-slate-200 hover:bg-red-50 hover:border-red-200 transition-all"
               >
                 <LogOut size={18} />
-                <span>Logout</span>
+                <span>{t('logout')}</span>
               </button>
             </div>
           </aside>
@@ -452,6 +484,7 @@ const Layout = () => {
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-[64px] bg-white border-t border-slate-200 flex items-center justify-around px-2 pb-[env(safe-area-inset-bottom)] z-40 shadow-lg">
         {navItems.slice(0, 4).map((item) => {
           const isActive = location.pathname.startsWith(item.path);
+          const displayLabel = item.transKey ? t(item.transKey) : item.label;
           return (
             <Link
               key={item.path}
@@ -461,7 +494,7 @@ const Layout = () => {
               }`}
             >
               <item.icon size={22} style={{ color: isActive ? BLUE_DARK : '#64748b' }} className="transition-colors" />
-              <span className="text-[10px] font-semibold leading-none text-slate-700">{item.label.split(' ')[0]}</span>
+              <span className="text-[10px] font-semibold leading-none text-slate-700">{displayLabel.split(' ')[0]}</span>
             </Link>
           );
         })}
@@ -474,7 +507,7 @@ const Layout = () => {
             <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center text-red-500 mb-4 border border-red-100 shadow-sm">
               <LogOut size={28} />
             </div>
-            <h2 className="text-xl font-bold font-heading text-slate-900 mb-2">Confirm Logout</h2>
+            <h2 className="text-xl font-bold font-heading text-slate-900 mb-2">{t('logout')}?</h2>
             <p className="text-sm text-slate-600 mb-6 px-2">
               Are you sure you want to securely log out of your session?
               <br/><br/>
@@ -485,13 +518,13 @@ const Layout = () => {
                 onClick={handleCancelLogout}
                 className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors border border-slate-200"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button 
                 onClick={handleConfirmLogout}
                 className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors shadow-sm shadow-red-200"
               >
-                Yes, Log out
+                {t('logout')}
               </button>
             </div>
           </div>

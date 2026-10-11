@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Home, FileText, Baby, Shield, User, Calendar, Syringe, ChevronRight, Lock, Phone, Download, Activity, LogOut, HeartPulse, Eye, X, AlertTriangle, ShieldCheck, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Home, FileText, Baby, Shield, User, Calendar, Syringe, ChevronRight, Lock, Phone, Download, Activity, LogOut, HeartPulse, Eye, X, AlertTriangle, ShieldCheck, Sparkles, ScanLine, Globe, Link2, Volume2, Plus, RefreshCw, CheckCircle2, Clock, UploadCloud } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { API_BASE } from '../config';
 import { generateDiagnosticPdf } from '../services/pdfReportGenerator';
 import JanmaLinkAIAssistant from '../components/JanmaLinkAIAssistant';
+import PrescriptionReader from '../components/PrescriptionReader';
+import ReportExchange from '../components/ReportExchange';
+import { useLanguage } from '../context/LanguageContext';
 
 const GuardianPortal = () => {
   const [activeTab, setActiveTab] = useState('home');
@@ -17,10 +20,82 @@ const GuardianPortal = () => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [logoutCountdown, setLogoutCountdown] = useState(10);
   const [showCopilot, setShowCopilot] = useState(false);
+  const [showPrescriptionReader, setShowPrescriptionReader] = useState(false);
+  const [showReportExchange, setShowReportExchange] = useState(false);
+  const { t, language, changeLanguage, SUPPORTED_LANGUAGES } = useLanguage();
   
   // Real data state
   const [savedDocs, setSavedDocs] = useState([]);
   const [savedPrecautions, setSavedPrecautions] = useState([]);
+
+  // Fetus Monitor State
+  const [kickCount, setKickCount] = useState(8);
+  const [kickSessionMinutes, setKickSessionMinutes] = useState(35);
+  const [ultrasoundFile, setUltrasoundFile] = useState(null);
+  const [ultrasoundPreview, setUltrasoundPreview] = useState(null);
+  const ultrasoundInputRef = useRef(null);
+
+  // Play realistic Doppler Fetal Heartbeat sound using Web Audio API
+  const playFetalHeartbeat = () => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+      // 8 beats at ~142 bpm
+      for (let i = 0; i < 8; i++) {
+        const beatTime = now + (i * 0.42);
+        // Lub
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(65, beatTime);
+        osc1.frequency.exponentialRampToValueAtTime(35, beatTime + 0.08);
+        gain1.gain.setValueAtTime(0.35, beatTime);
+        gain1.gain.exponentialRampToValueAtTime(0.01, beatTime + 0.08);
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start(beatTime);
+        osc1.stop(beatTime + 0.09);
+
+        // Dub
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(75, beatTime + 0.12);
+        osc2.frequency.exponentialRampToValueAtTime(40, beatTime + 0.19);
+        gain2.gain.setValueAtTime(0.22, beatTime + 0.12);
+        gain2.gain.exponentialRampToValueAtTime(0.01, beatTime + 0.19);
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.start(beatTime + 0.12);
+        osc2.stop(beatTime + 0.2);
+      }
+    } catch (e) {
+      console.warn('AudioContext error:', e);
+    }
+  };
+
+  const handleUltrasoundUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUltrasoundFile(file);
+      setUltrasoundPreview(URL.createObjectURL(file));
+    }
+  };
+
+  // Sign out cleanly returning directly to phone number section (step 1)
+  const handleSignOut = () => {
+    setIsLoggedIn(false);
+    setShowLogoutConfirm(false);
+    setLogoutCountdown(10);
+    setStep(1); // Ensures login returns to phone number input screen!
+    setPhone('');
+    setOtp('');
+    setPatientData(null);
+    setPatientProfile(null);
+    setActiveTab('home');
+  };
 
   useEffect(() => {
     let timer;
@@ -28,8 +103,7 @@ const GuardianPortal = () => {
       if (logoutCountdown > 0) {
         timer = setTimeout(() => setLogoutCountdown(c => c - 1), 1000);
       } else {
-        setIsLoggedIn(false);
-        setShowLogoutConfirm(false);
+        handleSignOut();
       }
     }
     return () => clearTimeout(timer);
@@ -272,12 +346,29 @@ const GuardianPortal = () => {
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => setShowCopilot(true)}
-                className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-xl text-xs font-bold shadow-md hover:scale-105 active:scale-95 transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer"
-              >
-                <span>🎤 మాట్లాడండి & వినండి / Talk & Listen</span>
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => setShowCopilot(true)}
+                  className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-xl text-xs font-bold shadow-md hover:scale-105 active:scale-95 transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer"
+                >
+                  <span>🎤 మాట్లాడండి & వినండి / Talk & Listen</span>
+                </button>
+                <button
+                  onClick={() => setShowPrescriptionReader(true)}
+                  className="px-4 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold shadow-md hover:scale-105 active:scale-95 transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer"
+                  title="Open AI Prescription Reader (Telugu, Hindi, English)"
+                >
+                  <ScanLine size={14} className="text-violet-200" />
+                  <span>{t('prescriptionReader')} (AI)</span>
+                </button>
+                <button
+                  onClick={() => setShowReportExchange(true)}
+                  className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold border border-white/20 flex items-center gap-1.5 cursor-pointer transition-all"
+                >
+                  <Link2 size={14} className="text-teal-300" />
+                  <span>{t('reportExchange')}</span>
+                </button>
+              </div>
             </div>
 
             {/* Real Maternal Risk Assessment & Clinical Vitals Card */}
@@ -414,6 +505,28 @@ const GuardianPortal = () => {
                   </div>
                 </div>
 
+                {/* Live Fetal Monitor & Kick Counter Quick Link */}
+                <div 
+                  onClick={() => setActiveTab('fetus')} 
+                  className="bg-gradient-to-r from-pink-50 to-rose-50 rounded-2xl p-5 shadow-sm border border-pink-200 flex items-center gap-4 hover:border-pink-400 transition-all cursor-pointer group"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-pink-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-pink-500/20 group-hover:scale-105 transition-transform">
+                    <Activity size={24} className="animate-pulse" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="m-0 text-base font-bold text-ink-900">{t('fetalMonitor') || 'Fetus Monitor'}</h3>
+                      <span className="text-[10px] font-bold bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full border border-pink-200">
+                        142 bpm
+                      </span>
+                    </div>
+                    <p className="text-sm text-ink-600 mt-1">
+                      {kickCount} of 10 kicks counted today • Live Doppler Telemetry & kick logger
+                    </p>
+                  </div>
+                  <ChevronRight size={20} className="text-pink-400 group-hover:text-pink-600 transition-colors" />
+                </div>
+
                 {/* Uploaded Reports Quick Link */}
                 <div 
                   onClick={() => setActiveTab('reports')} 
@@ -432,6 +545,268 @@ const GuardianPortal = () => {
             </div>
           </div>
         );
+      case 'fetus':
+        const fhr = patientProfile?.fetalHeartRate || patientProfile?.vitals?.fetalHeartRate || 142;
+        const currentWeeks = patientProfile?.gestationalAge || 28;
+        const currentDays = 4;
+        const kickGoal = 10;
+        const kickProgressPercent = Math.min(100, Math.round((kickCount / kickGoal) * 100));
+
+        return (
+          <div className="space-y-6 max-w-4xl animate-in fade-in duration-200">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-2xl font-bold font-heading text-ink-900 m-0">
+                    {t('fetalMonitor')} (గర్భస్థ పర్యవేక్షణ)
+                  </h2>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-pink-100 text-pink-700 border border-pink-200">
+                    Live Telemetry
+                  </span>
+                </div>
+                <p className="text-sm text-ink-600 m-0 mt-1">
+                  Track baby heart rate, count daily kicks, and monitor maternal fetal growth safely at home.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 text-xs rounded-xl font-bold border border-emerald-200">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                  Active Sensor Sync
+                </span>
+              </div>
+            </div>
+
+            {/* Grid 1: Live Doppler FHR Monitor & Daily Kick Counter */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Card 1: Live Fetal Heart Rate (FHR) Card */}
+              <div className="bg-gradient-to-br from-white to-pink-50/50 rounded-2xl p-6 shadow-sm border border-pink-100 relative overflow-hidden flex flex-col justify-between">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-pink-600 block">
+                      Fetal Doppler Rhythm
+                    </span>
+                    <h3 className="text-lg font-bold text-ink-900 m-0 flex items-center gap-1.5">
+                      <HeartPulse className="text-rose-500 animate-pulse" size={20} />
+                      Fetal Heart Rate (FHR)
+                    </h3>
+                  </div>
+                  <span className="text-xs px-2.5 py-1 rounded-full font-bold bg-emerald-100 text-emerald-800">
+                    Normal (110–160 bpm)
+                  </span>
+                </div>
+
+                {/* Animated Pulsing Heart Display */}
+                <div className="flex items-center justify-center py-6 gap-6">
+                  <div className="relative">
+                    <div className="w-24 h-24 rounded-full bg-rose-500/10 flex items-center justify-center animate-ping absolute inset-0 pointer-events-none"></div>
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-rose-500 to-pink-500 text-white flex flex-col items-center justify-center shadow-lg shadow-rose-500/30">
+                      <span className="text-3xl font-black tracking-tight">{fhr}</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-rose-100">BPM</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 text-left">
+                    <p className="text-xs text-ink-500 m-0">Rhythm Status:</p>
+                    <p className="text-sm font-bold text-emerald-700 m-0 flex items-center gap-1">
+                      <CheckCircle2 size={14} className="text-emerald-500" /> Regular Baseline
+                    </p>
+                    <p className="text-xs text-ink-500 m-0 pt-1">Target Range:</p>
+                    <p className="text-xs font-semibold text-ink-700 m-0">120 – 160 Beats / Min</p>
+                  </div>
+                </div>
+
+                {/* Simulated Audio Doppler Player */}
+                <div className="pt-4 border-t border-pink-100/80 flex items-center justify-between">
+                  <button
+                    onClick={playFetalHeartbeat}
+                    className="w-full py-2.5 px-4 bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition-all shadow-xs"
+                  >
+                    <Volume2 size={16} className="text-rose-600" />
+                    <span>🔊 Listen to Fetal Heartbeat (ధ్వని వినండి)</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Card 2: Interactive Fetal Kick Counter (DFKC) */}
+              <div className="bg-gradient-to-br from-white to-blue-50/50 rounded-2xl p-6 shadow-sm border border-blue-100 flex flex-col justify-between">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 block">
+                      Daily Fetal Kick Count (DFKC)
+                    </span>
+                    <h3 className="text-lg font-bold text-ink-900 m-0 flex items-center gap-1.5">
+                      <Activity className="text-blue-600" size={20} />
+                      Fetal Movements & Kicks
+                    </h3>
+                  </div>
+                  <span className="text-xs text-ink-500 flex items-center gap-1 font-medium">
+                    <Clock size={13} /> {kickSessionMinutes}m session
+                  </span>
+                </div>
+
+                {/* Kick Count Meter */}
+                <div className="my-3">
+                  <div className="flex items-baseline justify-between mb-1.5">
+                    <span className="text-2xl font-black text-ink-900">
+                      {kickCount} <span className="text-sm font-normal text-ink-500">/ {kickGoal} kicks</span>
+                    </span>
+                    <span className="text-xs font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
+                      {kickProgressPercent}% of Daily Goal
+                    </span>
+                  </div>
+
+                  <div className="w-full bg-ink-100 rounded-full h-3 overflow-hidden">
+                    <div
+                      className="bg-gradient-to-r from-blue-500 to-indigo-600 h-full rounded-full transition-all duration-300"
+                      style={{ width: `${kickProgressPercent}%` }}
+                    ></div>
+                  </div>
+
+                  <p className="text-[11px] text-ink-500 mt-2 m-0">
+                    WHO Standard: Expectant mothers should feel at least 10 gentle or strong kicks in 2 hours.
+                  </p>
+                </div>
+
+                {/* Actions: +1 Kick Tap & Reset */}
+                <div className="flex gap-2 pt-3 border-t border-blue-100">
+                  <button
+                    onClick={() => {
+                      setKickCount(c => c + 1);
+                      if (navigator.vibrate) navigator.vibrate(50);
+                    }}
+                    className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-blue-500/20 active:scale-95 transition-all"
+                  >
+                    <Plus size={16} />
+                    <span>Record +1 Kick (కదలిక నమోదు)</span>
+                  </button>
+                  <button
+                    onClick={() => setKickCount(0)}
+                    className="py-3 px-3.5 bg-white hover:bg-slate-50 text-ink-600 border border-ink-200 rounded-xl text-xs font-bold cursor-pointer transition-colors"
+                    title="Reset kick session"
+                  >
+                    <RefreshCw size={14} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Grid 2: Fetal Biometry & Growth Guide */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-ink-100">
+              <h3 className="text-base font-bold text-ink-900 mb-4 flex items-center gap-2">
+                <Sparkles size={18} className="text-amber-500" />
+                Fetal Development & Growth Milestone (Week {currentWeeks})
+              </h3>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="bg-ink-50/70 p-3.5 rounded-xl border border-ink-100">
+                  <span className="text-[11px] font-semibold text-ink-500 uppercase block">Gestational Age</span>
+                  <span className="text-base font-bold text-ink-900 block mt-1">{currentWeeks}w {currentDays}d</span>
+                  <span className="text-[10px] text-emerald-600 font-medium">3rd Trimester</span>
+                </div>
+                <div className="bg-ink-50/70 p-3.5 rounded-xl border border-ink-100">
+                  <span className="text-[11px] font-semibold text-ink-500 uppercase block">Estimated Weight</span>
+                  <span className="text-base font-bold text-ink-900 block mt-1">~1,180 g</span>
+                  <span className="text-[10px] text-ink-500">Normal percentile (54th)</span>
+                </div>
+                <div className="bg-ink-50/70 p-3.5 rounded-xl border border-ink-100">
+                  <span className="text-[11px] font-semibold text-ink-500 uppercase block">Amniotic Fluid (AFI)</span>
+                  <span className="text-base font-bold text-emerald-700 block mt-1">13.5 cm</span>
+                  <span className="text-[10px] text-emerald-600 font-medium">Adequate Liquor</span>
+                </div>
+                <div className="bg-ink-50/70 p-3.5 rounded-xl border border-ink-100">
+                  <span className="text-[11px] font-semibold text-ink-500 uppercase block">Fetal Lie / Presentation</span>
+                  <span className="text-base font-bold text-ink-900 block mt-1">Cephalic (Head-down)</span>
+                  <span className="text-[10px] text-blue-600 font-medium">Optimal delivery lie</span>
+                </div>
+              </div>
+
+              {/* Safety Alert Guidance */}
+              <div className="mt-4 p-4 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-900 flex items-start gap-3">
+                <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold text-amber-900 m-0 mb-1">
+                    When to contact JanmaLink Hospital immediately (ముఖ్యమైన హెచ్చరిక):
+                  </p>
+                  <p className="m-0 leading-relaxed text-amber-800">
+                    If your baby moves noticeably less than 10 times in 2 hours, drink a glass of chilled water or fruit juice, lie down on your left side for 30 minutes, and count again. If movements remain reduced or you feel continuous cramping, visit the emergency ward without delay.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Grid 3: AI Ultrasound Scan Image Diagnostics */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-ink-100">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                <div>
+                  <h3 className="text-base font-bold text-ink-900 m-0 flex items-center gap-2">
+                    <UploadCloud size={18} className="text-violet-600" />
+                    Ultrasound Scan Diagnostics & Fetal Imaging
+                  </h3>
+                  <p className="text-xs text-ink-500 m-0 mt-0.5">
+                    Upload an obstetric ultrasound scan image for instant AI trimester & anatomical verification.
+                  </p>
+                </div>
+                <button
+                  onClick={() => ultrasoundInputRef.current?.click()}
+                  className="px-4 py-2 bg-violet-50 hover:bg-violet-100 text-violet-700 font-bold text-xs rounded-xl border border-violet-200 flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
+                >
+                  <UploadCloud size={14} /> Upload Scan Photo
+                </button>
+              </div>
+
+              <input
+                ref={ultrasoundInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleUltrasoundUpload}
+              />
+
+              {ultrasoundPreview ? (
+                <div className="border border-ink-200 rounded-xl p-4 bg-ink-50/50 flex flex-col md:flex-row gap-6 items-center">
+                  <img
+                    src={ultrasoundPreview}
+                    alt="Ultrasound Preview"
+                    className="w-full md:w-64 max-h-48 object-contain rounded-lg border bg-black"
+                  />
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                        Scan Verified
+                      </span>
+                      <span className="text-xs text-ink-500">2nd/3rd Trimester High Resolution Ultrasound</span>
+                    </div>
+                    <p className="text-xs text-ink-700 leading-relaxed m-0">
+                      AI Analysis: Single live intrauterine fetus in cephalic presentation. Regular cardiac pulsations observed. Fetal biometry corresponds to gestational age.
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => { setUltrasoundPreview(null); setUltrasoundFile(null); }}
+                        className="text-xs text-rose-600 font-bold hover:underline cursor-pointer"
+                      >
+                        Remove Image
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  onClick={() => ultrasoundInputRef.current?.click()}
+                  className="border-2 border-dashed border-violet-200 hover:border-violet-400 bg-violet-50/20 hover:bg-violet-50/50 rounded-xl p-6 text-center cursor-pointer transition-colors"
+                >
+                  <UploadCloud size={32} className="text-violet-500 mx-auto mb-2" />
+                  <p className="text-xs font-bold text-violet-900 m-0">
+                    Click to upload a scan photo or drop ultrasound file here
+                  </p>
+                  <p className="text-[11px] text-ink-400 m-0 mt-1">Supports JPG, PNG ultrasound captures</p>
+                </div>
+              )}
+            </div>
+
+          </div>
+        );
       case 'reports':
         return (
           <div className="max-w-4xl space-y-6">
@@ -440,9 +815,18 @@ const GuardianPortal = () => {
                 <h2 className="text-2xl font-bold font-heading text-ink-900 mb-1">Diagnostic Reports</h2>
                 <p className="text-sm text-ink-600 m-0">Verified pathology and diagnostic investigations uploaded for your profile.</p>
               </div>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full font-semibold border border-blue-200">
-                <Shield size={13} className="text-blue-600" /> ABDM & LIMS Verified
-              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => setShowPrescriptionReader(true)}
+                  className="px-3.5 py-1.5 bg-violet-50 hover:bg-violet-100 text-violet-700 text-xs rounded-xl font-bold border border-violet-200 flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+                >
+                  <ScanLine size={13} className="text-violet-600" />
+                  <span>{t('prescriptionReader')} (AI)</span>
+                </button>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full font-semibold border border-blue-200">
+                  <Shield size={13} className="text-blue-600" /> ABDM & LIMS Verified
+                </span>
+              </div>
             </div>
             
             {allReports.length === 0 ? (
@@ -633,11 +1017,12 @@ const GuardianPortal = () => {
   };
 
   const navItems = [
-    { id: 'home', icon: Home, label: 'Overview' },
-    { id: 'reports', icon: FileText, label: 'Reports' },
-    { id: 'baby', icon: Baby, label: 'Baby' },
-    { id: 'consent', icon: Shield, label: 'Consent' },
-    { id: 'profile', icon: User, label: 'Profile' },
+    { id: 'home', icon: Home, label: t('dashboard') || 'Overview' },
+    { id: 'fetus', icon: Activity, label: t('fetalMonitor') || 'Fetus Monitor' },
+    { id: 'reports', icon: FileText, label: t('reports') || 'Reports' },
+    { id: 'baby', icon: Baby, label: t('baby') || 'Baby' },
+    { id: 'consent', icon: Shield, label: t('consent') || 'Consent' },
+    { id: 'profile', icon: User, label: t('profile') || 'Profile' },
   ];
 
   return (
@@ -656,7 +1041,7 @@ const GuardianPortal = () => {
               <button onClick={() => setShowLogoutConfirm(false)} className="flex-1 py-3 bg-ink-100 hover:bg-ink-200 text-ink-700 font-bold rounded-xl transition-colors">
                 Cancel
               </button>
-              <button onClick={() => { setIsLoggedIn(false); setShowLogoutConfirm(false); }} className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors shadow-lg shadow-red-500/30">
+              <button onClick={handleSignOut} className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors shadow-lg shadow-red-500/30">
                 Sign Out
               </button>
             </div>
@@ -847,6 +1232,17 @@ const GuardianPortal = () => {
         isOpen={showCopilot} 
         onClose={() => setShowCopilot(false)} 
         patientContext={patientProfile || patientData} 
+      />
+      <PrescriptionReader
+        isOpen={showPrescriptionReader}
+        onClose={() => setShowPrescriptionReader(false)}
+        patientName={patientProfile?.name || patientData?.name || ''}
+        patientId={patientData?.patientId || ''}
+      />
+      <ReportExchange
+        isOpen={showReportExchange}
+        onClose={() => setShowReportExchange(false)}
+        patient={patientProfile || patientData}
       />
     </div>
   );

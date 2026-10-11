@@ -2,12 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Bot, Mic, MicOff, Volume2, VolumeX, Send, Sparkles, AlertTriangle, 
   CheckCircle2, X, RefreshCw, FileText, ChevronRight, Apple, Pill, 
-  HelpCircle, Globe, Shield, HeartPulse, Activity, UserCheck, Lock
+  HelpCircle, Globe, Shield, HeartPulse, Activity, UserCheck, Lock,
+  Maximize2, Minimize2, MessageSquare
 } from 'lucide-react';
 import { predictRagReport, askRagChat, askRagPersonalAssistant } from '../services/api';
 
 export default function JanmaLinkAIAssistant({ isOpen: externalIsOpen, onClose: externalOnClose, patientContext = null }) {
   const [isOpen, setIsOpen] = useState(externalIsOpen !== undefined ? externalIsOpen : false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [showGreetingBubble, setShowGreetingBubble] = useState(true);
   const [activeTab, setActiveTab] = useState('chat'); // 'chat' | 'predict'
   const [language, setLanguage] = useState('te'); // 'te' | 'hi' | 'en' (default Telugu as per user preference)
   
@@ -400,32 +403,97 @@ export default function JanmaLinkAIAssistant({ isOpen: externalIsOpen, onClose: 
 
   return (
     <>
-      {/* ── Global Floating Trigger Button ── */}
-      {!isOpen && (
-        <button
-          onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white rounded-full shadow-2xl hover:shadow-cyan-500/25 hover:scale-105 active:scale-95 transition-all duration-300 group border border-white/20 backdrop-blur-md cursor-pointer"
-          title="JanmaLink Personal Clinical AI Copilot"
-        >
-          <div className="relative">
-            <Bot className="w-5 h-5 text-white animate-pulse" />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-400 rounded-full animate-ping" />
-          </div>
-          <span className="font-semibold text-sm tracking-wide">
-            {patientName 
-              ? (language === 'te' ? `${patientName} సహాయకుడు` : language === 'hi' ? `${patientName} सहायक` : `${patientName}'s Copilot`) 
-              : (language === 'te' ? 'జన్మలింక్ AI సహాయకుడు' : language === 'hi' ? 'जन्मलिंक AI सहायक' : 'JanmaLink AI Copilot')}
-          </span>
-          <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
-            {language === 'te' ? 'తెలుగు' : language === 'hi' ? 'हिंदी' : 'EN'}
-          </span>
-        </button>
+      {/* ── Global Floating Trigger Button (Circle-Based Interactive AI Chatbot) ── */}
+      {!isOpen && externalIsOpen === undefined && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3">
+          {/* Interactive greeting speech bubble callout */}
+          {showGreetingBubble && (
+            <div 
+              onClick={() => setIsOpen(true)}
+              className="relative hidden sm:flex items-center gap-3 px-4 py-2.5 bg-white/95 hover:bg-white text-slate-800 rounded-2xl shadow-xl shadow-teal-900/10 border border-teal-100 backdrop-blur-md cursor-pointer transition-all duration-300 hover:scale-105 group select-none"
+            >
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse relative">
+                <span className="absolute -inset-0.5 rounded-full bg-emerald-400 animate-ping opacity-75"></span>
+              </div>
+              <div className="text-left">
+                <div className="text-xs font-bold text-teal-800 flex items-center gap-1.5">
+                  <span>
+                    {patientName 
+                      ? (language === 'te' ? `${patientName} AI సహాయకుడు` : language === 'hi' ? `${patientName} AI सहायक` : `${patientName}'s AI Copilot`)
+                      : (language === 'te' ? 'జన్మలింక్ AI సహాయకుడు' : language === 'hi' ? 'जन्मलिंक AI सहायक' : 'JanmaLink AI Copilot')}
+                  </span>
+                  <span className="text-[10px] bg-teal-50 text-teal-700 px-1.5 py-0.2 rounded font-bold uppercase border border-teal-200/50">
+                    {language === 'te' ? 'తెలుగు' : language === 'hi' ? 'हिंदी' : 'EN'}
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-500 font-medium leading-tight">
+                  {language === 'te' 
+                    ? 'ఏదైనా అడగండి లేదా మాట్లాడండి 👋' 
+                    : language === 'hi' 
+                    ? 'कोई भी सवाल पूछें या बोलें 👋' 
+                    : 'Ask anything or tap to speak 👋'}
+                </div>
+              </div>
+
+              {/* Mini dismiss button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowGreetingBubble(false);
+                }}
+                className="text-slate-400 hover:text-slate-600 p-0.5 -mr-1 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+                title="Dismiss"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+
+              {/* Chat bubble tail pointing right towards the circle */}
+              <div className="absolute right-[-6px] top-1/2 -translate-y-1/2 w-3 h-3 bg-white rotate-45 border-r border-t border-teal-100"></div>
+            </div>
+          )}
+
+          {/* Circular Floating Action Button */}
+          <button
+            onClick={() => setIsOpen(true)}
+            className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-tr from-teal-600 via-emerald-600 to-cyan-500 text-white shadow-2xl shadow-teal-800/40 hover:shadow-cyan-500/50 hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center border-2 border-white/60 cursor-pointer group"
+            title={patientName ? `${patientName}'s AI Copilot` : "JanmaLink Interactive AI Chatbot"}
+            aria-label="Open AI Assistant"
+          >
+            {/* Glowing animated halo */}
+            <span className="absolute -inset-1 rounded-full bg-gradient-to-tr from-emerald-400 via-teal-400 to-cyan-400 opacity-50 blur group-hover:opacity-90 animate-pulse transition duration-500" />
+
+            {/* Inner circle with Robot Avatar & Sparkles */}
+            <div className="relative flex items-center justify-center">
+              <Bot className="w-7 h-7 sm:w-8 sm:h-8 text-white group-hover:rotate-6 transition-transform duration-300 drop-shadow-md" />
+              <Sparkles className="w-3.5 h-3.5 text-amber-300 absolute -top-1 -right-1 animate-pulse" />
+            </div>
+
+            {/* Live active indicator badge */}
+            <span className="absolute top-0 right-0 flex h-3.5 w-3.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-400 border-2 border-white shadow-xs"></span>
+            </span>
+
+            {/* Bottom active language badge */}
+            <span className="absolute -bottom-1 px-1.5 py-0.2 bg-slate-900/90 text-[9px] font-black text-cyan-300 rounded-full border border-teal-400/40 shadow-sm uppercase tracking-wider">
+              {language === 'te' ? 'తె' : language === 'hi' ? 'हि' : 'EN'}
+            </span>
+          </button>
+        </div>
       )}
 
-      {/* ── Main Modal / Drawer ── */}
+      {/* ── Main Interactive Chatbot Widget / Modal ── */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-4xl h-[92vh] max-h-[820px] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden text-slate-800">
+        <div className={
+          isExpanded
+            ? "fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
+            : "fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex justify-end items-end animate-in slide-in-from-bottom-6 fade-in duration-300"
+        }>
+          <div className={
+            isExpanded
+              ? "relative w-full max-w-4xl h-[94vh] max-h-[850px] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden text-slate-800"
+              : "relative w-[96vw] sm:w-[440px] md:w-[460px] h-[650px] max-h-[calc(100vh-3.5rem)] bg-white rounded-3xl shadow-2xl border border-teal-200/70 flex flex-col overflow-hidden text-slate-800 ring-1 ring-slate-900/10"
+          }>
             
             {/* ── Modal Header ── */}
             <div className="px-5 py-3.5 bg-gradient-to-r from-teal-700 via-cyan-800 to-slate-900 text-white flex items-center justify-between shadow-md">
@@ -457,7 +525,7 @@ export default function JanmaLinkAIAssistant({ isOpen: externalIsOpen, onClose: 
                 </div>
               </div>
 
-              {/* Controls: 3-Way Language Toggle, Audio Stop, Auto-read, Close */}
+              {/* Controls: 3-Way Language Toggle, Audio Stop, Auto-read, Maximize/Dock, Close */}
               <div className="flex items-center gap-2">
                 {/* 3-Language Selector */}
                 <div className="flex items-center bg-white/10 rounded-lg p-0.5 border border-white/20">
@@ -500,6 +568,15 @@ export default function JanmaLinkAIAssistant({ isOpen: externalIsOpen, onClose: 
                   title={autoSpeak ? 'Auto-Read Audio is ON' : 'Auto-Read Audio is OFF'}
                 >
                   <Volume2 className="w-4 h-4" />
+                </button>
+
+                {/* Maximize / Dock toggle */}
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors cursor-pointer hidden sm:flex items-center justify-center"
+                  title={isExpanded ? 'Dock to corner' : 'Expand full screen'}
+                >
+                  {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                 </button>
 
                 {/* Close Button */}
